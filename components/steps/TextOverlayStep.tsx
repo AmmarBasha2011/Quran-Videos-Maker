@@ -289,11 +289,11 @@ export const TextOverlayStep: React.FC<Props> = ({ state, updateState, audioDura
                                     </button>
                                     {error && <p className="text-red-400 text-xs">{error}</p>}
                                 </div>
-                                <div className="border-t border-slate-800 pt-3">
-                                    <div className="flex items-center gap-2 mb-2"><CopyPlus size={16} className="text-emerald-400"/><span className="text-sm font-bold">إنشاء نسختين؟</span></div>
-                                    <label className="flex items-center gap-2 cursor-pointer bg-slate-900 p-2 rounded border border-slate-800 hover:border-emerald-500/50 transition-colors">
-                                        <input type="checkbox" className="accent-emerald-500 w-4 h-4" checked={config.generateNoTextVariant} onChange={(e) => updateConfig({ generateNoTextVariant: e.target.checked })}/>
-                                        <span className="text-xs text-slate-300">نسخة بالآيات + نسخة خام</span>
+                                <div className="border-t border-slate-800 pt-3 opacity-50 select-none grayscale cursor-not-allowed">
+                                    <div className="flex items-center gap-2 mb-2"><CopyPlus size={16} className="text-slate-400"/><span className="text-sm font-bold text-slate-400">إنشاء نسختين؟ (غير متاح حالياً)</span></div>
+                                    <label className="flex items-center gap-2 bg-slate-900 p-2 rounded border border-slate-800 cursor-not-allowed">
+                                        <input type="checkbox" className="accent-emerald-500 w-4 h-4 cursor-not-allowed" checked={false} disabled/>
+                                        <span className="text-xs text-slate-500">نسخة بالآيات + نسخة خام</span>
                                     </label>
                                 </div>
                             </>
