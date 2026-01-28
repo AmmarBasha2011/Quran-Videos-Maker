@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { AppState } from '../types';
+import { AppState, BackgroundAsset, TextStyle } from '../types';
+import { RESOLUTION_DIMENSIONS } from '../constants';
 
 export const useVideoExport = () => {
   const [isExporting, setIsExporting] = useState(false);
@@ -10,89 +11,68 @@ export const useVideoExport = () => {
     audioBuffer: AudioBuffer | null,
     onComplete: (url: string) => void
   ) => {
-    if (!state.backgroundImage || !audioBuffer) return;
+    // Basic Validation
+    if (state.selectedAssets.length === 0) {
+        alert("يرجى اختيار وسائط (صور أو فيديو) من مكتبة الخلفيات");
+        return;
+    }
+    if (!audioBuffer) {
+        alert("يرجى اختيار ملف صوتي");
+        return;
+    }
 
     setIsExporting(true);
     setExportProgress(0);
 
-    // 1. Queue Simulation (as requested)
-    // "Server can only process 1 video at same time"
-    for (let i = 0; i < 20; i++) {
-        await new Promise(r => setTimeout(r, 100)); // 2s wait
-        setExportProgress(prev => Math.min(prev + 1, 20));
-    }
-
-    // 2. Setup Canvas
+    // 1. Setup Canvas
     const canvas = document.createElement('canvas');
-    const width = state.resolution === '1080p' ? 1920 : 1280;
-    const height = state.resolution === '1080p' ? 1080 : 720;
-    canvas.width = width;
-    canvas.height = height;
+    const dimensions = RESOLUTION_DIMENSIONS[state.resolution] || RESOLUTION_DIMENSIONS['1080p'];
+    canvas.width = dimensions.width;
+    canvas.height = dimensions.height;
     const ctx = canvas.getContext('2d')!;
 
-    // 3. Draw Background
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = state.backgroundImage;
+    // 2. Pre-load Assets (CRITICAL FOR CORS AND BLACK SCREEN FIX)
+    const assetMap = new Map<string, HTMLImageElement | HTMLVideoElement>();
     
-    await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-    });
+    try {
+        for (const asset of state.selectedAssets) {
+            if (asset.type === 'image') {
+                const img = new Image();
+                img.crossOrigin = "anonymous"; // CRITICAL
+                img.src = asset.url;
+                await new Promise((resolve) => {
+                    img.onload = resolve;
+                    img.onerror = () => { console.warn("Failed image", asset.url); resolve(null); }; 
+                });
+                assetMap.set(asset.id, img);
+            } else {
+                const vid = document.createElement('video');
+                vid.crossOrigin = "anonymous"; // CRITICAL
+                vid.src = asset.url;
+                vid.muted = true;
+                vid.loop = true;
+                vid.playsInline = true;
+                vid.preload = "auto";
+                // Wait for metadata/data to ensure it's ready to draw
+                await new Promise((resolve) => {
+                    vid.onloadeddata = resolve;
+                    vid.onerror = () => { console.warn("Failed video", asset.url); resolve(null); };
+                });
+                assetMap.set(asset.id, vid);
+            }
+        }
+    } catch (e) {
+        console.error("Asset loading error", e);
+    }
 
-    // Draw image cover
-    const scale = Math.max(width / img.width, height / img.height);
-    const x = (width / 2) - (img.width / 2) * scale;
-    const y = (height / 2) - (img.height / 2) * scale;
-    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+    setExportProgress(10);
 
-    // Dark overlay for text readability
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.fillRect(0, 0, width, height);
-
-    // 4. Draw Text
-    ctx.fillStyle = '#ffffff';
-    // Note: In RTL context on canvas, 'start' maps to right, but we calculate explicit X coordinates mostly.
-    // However, explicitly setting direction helps with glyph shaping for mixed text.
-    ctx.direction = 'rtl'; 
-    
-    // Surah (Rakkas - Thuluth Style)
-    const surahSize = state.resolution === '1080p' ? 120 : 80;
-    ctx.font = `bold ${surahSize}px "Rakkas", "Amiri", serif`; 
-    ctx.shadowColor = "rgba(0,0,0,0.8)";
-    ctx.shadowBlur = 15;
-    
-    // Position parsing needs to account for RTL logic visually
-    // In RTL UI "Left" usually means the "End" of the line, but `state.surahPosition` is string literal 'top-left'.
-    // We stick to physical screen position for the canvas drawing to match the string keys.
-    const parsePos = (pos: string) => {
-        const p = { x: width/2, y: height/2, align: 'center' as CanvasTextAlign };
-        if (pos.includes('left')) { p.x = 100; p.align = 'left'; }
-        if (pos.includes('right')) { p.x = width - 100; p.align = 'right'; }
-        if (pos.includes('top')) { p.y = 150; }
-        if (pos.includes('bottom')) { p.y = height - 150; }
-        return p;
-    };
-
-    const sPos = parsePos(state.surahPosition);
-    ctx.textAlign = sPos.align;
-    ctx.fillText(state.surahName, sPos.x, sPos.y);
-
-    // Reader (Smaller - Scheherazade New)
-    const readerSize = state.resolution === '1080p' ? 60 : 40;
-    ctx.font = `${readerSize}px "Scheherazade New", serif`;
-    const rPos = parsePos(state.readerPosition);
-    ctx.textAlign = rPos.align;
-    ctx.fillText(state.readerName, rPos.x, rPos.y);
-
-    // 5. Create Stream
-    const canvasStream = canvas.captureStream(2); // 2 FPS as requested
-
-    // 6. Setup Audio Output (with effects applied)
+    // 3. Setup Audio Output
     const offlineCtx = new OfflineAudioContext(2, audioBuffer.length, audioBuffer.sampleRate);
     const source = offlineCtx.createBufferSource();
     source.buffer = audioBuffer;
     
+    // Reverb Logic
     const reverb = offlineCtx.createConvolver();
     const rate = offlineCtx.sampleRate;
     const length = rate * 2.5;
@@ -119,13 +99,16 @@ export const useVideoExport = () => {
     masterGain.connect(offlineCtx.destination);
     
     source.start(0);
-    const renderedBuffer = await offlineCtx.startRendering();
+    const renderedAudioBuffer = await offlineCtx.startRendering();
+    setExportProgress(20);
 
-    // 7. Combine into MediaRecorder
+    // 4. Setup Media Recorder
+    const fps = Math.max(1, Math.min(60, state.fps));
+    const canvasStream = canvas.captureStream(fps);
     const audioCtx = new AudioContext();
     const dest = audioCtx.createMediaStreamDestination();
     const sourceNode = audioCtx.createBufferSource();
-    sourceNode.buffer = renderedBuffer;
+    sourceNode.buffer = renderedAudioBuffer;
     sourceNode.connect(dest);
     
     const combinedStream = new MediaStream([
@@ -134,7 +117,8 @@ export const useVideoExport = () => {
     ]);
 
     const recorder = new MediaRecorder(combinedStream, {
-        mimeType: 'video/webm; codecs=vp9' 
+        mimeType: 'video/webm; codecs=vp9',
+        videoBitsPerSecond: state.resolution === '4K' ? 25000000 : 8000000
     });
 
     const chunks: Blob[] = [];
@@ -146,28 +130,161 @@ export const useVideoExport = () => {
         setIsExporting(false);
         setExportProgress(100);
         audioCtx.close();
-        
-        // No auto cleanup as requested
+        // Cleanup
+        assetMap.forEach((el) => {
+            if (el instanceof HTMLVideoElement) {
+                el.pause();
+                el.removeAttribute('src');
+                el.load();
+            }
+        });
     };
+
+    // 5. Animation Loop
+    const duration = renderedAudioBuffer.duration;
+    const totalAssetDuration = state.selectedAssets.reduce((acc, cur) => acc + cur.duration, 0);
 
     recorder.start();
     sourceNode.start(0);
 
-    // Monitor progress
-    const duration = renderedBuffer.duration;
-    const startTime = Date.now();
-    
-    const interval = setInterval(() => {
-        const elapsed = (Date.now() - startTime) / 1000;
-        const p = Math.min((elapsed / duration) * 100, 99);
-        setExportProgress(20 + (p * 0.8)); // map remaining 80%
+    const startTime = performance.now();
+    let currentVideoElement: HTMLVideoElement | null = null;
+
+    const drawFrame = async () => {
+        const currentTime = (performance.now() - startTime) / 1000;
         
-        if (elapsed >= duration) {
+        if (currentTime >= duration) {
             recorder.stop();
             sourceNode.stop();
-            clearInterval(interval);
+            return;
         }
-    }, 500);
+
+        // --- Determine Current Asset ---
+        const loopTime = totalAssetDuration > 0 ? currentTime % totalAssetDuration : 0;
+        
+        let foundAsset = state.selectedAssets[0];
+        let assetStartTime = 0;
+        let accumulator = 0;
+
+        for (const asset of state.selectedAssets) {
+            if (loopTime >= accumulator && loopTime < accumulator + asset.duration) {
+                foundAsset = asset;
+                assetStartTime = accumulator;
+                break;
+            }
+            accumulator += asset.duration;
+        }
+
+        const assetElement = assetMap.get(foundAsset.id);
+        const assetLocalTime = loopTime - assetStartTime;
+
+        // --- Draw Background ---
+        if (assetElement) {
+            if (foundAsset.type === 'video' && assetElement instanceof HTMLVideoElement) {
+                const vid = assetElement;
+                if (currentVideoElement !== vid) {
+                     if (currentVideoElement) currentVideoElement.pause();
+                     currentVideoElement = vid;
+                     // Safe time setting
+                     if (Number.isFinite(vid.duration) && vid.duration > 0) {
+                        vid.currentTime = assetLocalTime % vid.duration; 
+                     } else {
+                        vid.currentTime = 0;
+                     }
+                     try { vid.play(); } catch(e) {}
+                }
+                
+                // Keep syncing roughly to prevent drift, though 'loop' handles most
+                // For export, we might need to manually ensure it's playing
+                if (vid.paused) vid.play().catch(() => {});
+
+                const vScale = Math.max(canvas.width / vid.videoWidth, canvas.height / vid.videoHeight);
+                const vx = (canvas.width / 2) - (vid.videoWidth / 2) * vScale;
+                const vy = (canvas.height / 2) - (vid.videoHeight / 2) * vScale;
+                ctx.drawImage(vid, vx, vy, vid.videoWidth * vScale, vid.videoHeight * vScale);
+
+            } else if (foundAsset.type === 'image' && assetElement instanceof HTMLImageElement) {
+                if (currentVideoElement) {
+                    currentVideoElement.pause();
+                    currentVideoElement = null;
+                }
+                
+                const img = assetElement;
+                const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
+                const x = (canvas.width / 2) - (img.width / 2) * scale;
+                const y = (canvas.height / 2) - (img.height / 2) * scale;
+
+                // Ken Burns
+                const zoom = 1 + (assetLocalTime / foundAsset.duration) * 0.05; 
+                ctx.save();
+                ctx.translate(canvas.width/2, canvas.height/2);
+                ctx.scale(zoom, zoom);
+                ctx.translate(-canvas.width/2, -canvas.height/2);
+                ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                ctx.restore();
+            }
+        } else {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // --- Overlay ---
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // --- Text Rendering (New Logic) ---
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        const drawText = (text: string, xPct: number, yPct: number, style: TextStyle, baseSize: number) => {
+            const x = (xPct / 100) * canvas.width;
+            const y = (yPct / 100) * canvas.height;
+            const finalSize = baseSize * style.fontSizeScale;
+            
+            ctx.font = `bold ${finalSize}px "${style.font}", "Amiri", sans-serif`;
+            ctx.fillStyle = style.color;
+            
+            if (style.hasShadow) {
+                ctx.shadowColor = 'rgba(0,0,0,0.9)';
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+            } else {
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+            }
+            
+            ctx.fillText(text, x, y);
+            
+            // Reset
+            ctx.shadowBlur = 0;
+        };
+
+        const ratio = canvas.height / 1080;
+
+        drawText(
+            state.surahName, 
+            state.surahPosition.x, 
+            state.surahPosition.y, 
+            state.surahStyle,
+            120 * ratio
+        );
+
+        drawText(
+            state.readerName, 
+            state.readerPosition.x, 
+            state.readerPosition.y, 
+            state.readerStyle,
+            60 * ratio
+        );
+
+        setExportProgress(20 + ((currentTime / duration) * 80));
+        requestAnimationFrame(drawFrame);
+    };
+
+    requestAnimationFrame(drawFrame);
 
   }, []);
 

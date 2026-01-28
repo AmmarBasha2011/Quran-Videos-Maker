@@ -158,7 +158,11 @@ export const useAudioProcessing = ({ file, reverbAmount, echoAmount, normalize }
 
   const pause = useCallback(() => {
     if (sourceNodeRef.current && audioContextRef.current) {
-        sourceNodeRef.current.stop();
+        try {
+            sourceNodeRef.current.stop();
+        } catch (e) {
+            // ignore if already stopped
+        }
         const elapsed = audioContextRef.current.currentTime - startTimeRef.current;
         pauseTimeRef.current = elapsed;
         setIsPlaying(false);
@@ -179,9 +183,6 @@ export const useAudioProcessing = ({ file, reverbAmount, echoAmount, normalize }
     
     dryGainNodeRef.current.gain.setTargetAtTime(normalize ? 0.8 : dryAmt, audioContextRef.current!.currentTime, 0.1);
     wetGainNodeRef.current.gain.setTargetAtTime(wetAmt, audioContextRef.current!.currentTime, 0.1);
-    
-    // Echo updates would require rebuilding the graph or using AudioParams if accessible. 
-    // For simplicity, we restart on play or accept that echo amount is fixed on start in this MVP.
   }, [reverbAmount, normalize]);
 
   // Update visual progress
@@ -208,7 +209,8 @@ export const useAudioProcessing = ({ file, reverbAmount, echoAmount, normalize }
     duration,
     isReady,
     togglePlay,
-    play, // exposed for export
+    play, 
+    pause, // Export pause specifically
     audioBuffer: audioBufferRef.current
   };
 };
