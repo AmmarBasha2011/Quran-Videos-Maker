@@ -1,10 +1,15 @@
+
 export type TextPosition = { x: number; y: number }; // Percentage 0-100
 
-export type Resolution = '360p' | '480p' | '720p' | '1080p' | '2K' | '4K';
+export type Resolution = '360p' | '480p' | '720p' | '1080p' | '2K' | '4K' | '8K';
 
-// Broad list of fonts
+export type AspectRatio = '16:9' | '9:16' | '1:1' | '4:5';
+
+export type VideoFormat = 'mp4' | 'webm';
+
+// Broad list of fonts including new additions
 export type FontType = 
-  'Amiri' | 'Rakkas' | 'Lateef' | 'Scheherazade New' | 'Reem Kufi' | 
+  'Amiri' | 'Amiri Quran' | 'Rakkas' | 'Lateef' | 'Scheherazade New' | 'Reem Kufi' | 
   'Cairo' | 'Tajawal' | 'Almarai' | 'El Messiri' | 'Aref Ruqaa' | 
   'Lalezar' | 'Katibeh' | 'Gulzar' | 'Vibes' | 'Lemonada' | 
   'Changa' | 'Mada' | 'Noto Kufi Arabic' | 'Noto Naskh Arabic' | 
@@ -35,6 +40,7 @@ export interface HistoryItem {
   surahName: string;
   readerName: string;
   resolution: Resolution;
+  aspectRatio: AspectRatio;
 }
 
 export interface TextStyle {
@@ -44,13 +50,67 @@ export interface TextStyle {
   hasShadow: boolean;
 }
 
+export interface Verse {
+  text: string;
+  numberInSurah: number;
+  surahNumber: number;
+}
+
+export interface VerseTiming {
+  verseIndex: number; // Index in the fetched array
+  text: string;
+  startTime: number; // Seconds
+  endTime: number; // Seconds
+}
+
+export interface HighlightedWord {
+  verseIndex: number;
+  wordIndex: number;
+  color: string;
+}
+
+export interface AutoHighlight {
+    word: string;
+    color: string;
+}
+
+export interface GlobalStyleConfig {
+    transitionType: 'cut' | 'fade';
+    textAnimation: 'fade' | 'slideUp' | 'scale' | 'none';
+    autoHighlights: AutoHighlight[];
+}
+
+export interface QuranConfig {
+  isEnabled: boolean;
+  surahNumber: number;
+  fromAyah: number;
+  toAyah: number;
+  verses: Verse[];
+  timings: VerseTiming[];
+  style: TextStyle; // Specifically for Quran text
+  position: TextPosition;
+  highlightColor: string;
+  highlights: HighlightedWord[]; // Manual highlights (Verse Specific)
+  apiKeys: string[]; // List of user keys
+  generateNoTextVariant: boolean; // NEW: Generate second video without text
+}
+
 export interface AppState {
   step: number;
   
+  // Video Configuration
+  aspectRatio: AspectRatio;
+
   // Text Content
   readerName: string;
   surahName: string;
   
+  // Quran Text & Sync
+  quranConfig: QuranConfig;
+
+  // Global Styling
+  globalStyle: GlobalStyleConfig;
+
   // Backgrounds
   selectedAssets: BackgroundAsset[]; 
   
@@ -69,8 +129,9 @@ export interface AppState {
   // Video Settings
   resolution: Resolution;
   fps: number;
+  format: VideoFormat;
   
-  // Style / Typography (Refactored)
+  // Style / Typography 
   surahPosition: TextPosition;
   readerPosition: TextPosition;
   surahStyle: TextStyle;
@@ -79,6 +140,7 @@ export interface AppState {
   // Processing
   isProcessing: boolean;
   progress: number;
+  timeRemaining?: string; 
   queuePosition: number | null;
 
   // History

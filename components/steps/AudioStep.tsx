@@ -1,5 +1,6 @@
-import React from 'react';
-import { Upload, FileAudio, Play, Pause, Plus, Trash2 } from 'lucide-react';
+
+import React, { useState, useRef, useEffect } from 'react';
+import { Upload, FileAudio, Play, Pause, Plus, Trash2, Mic, Square, Loader2 } from 'lucide-react';
 import { AppState, AudioPreset } from '../../types';
 import { AUDIO_PRESETS } from '../../constants';
 
@@ -19,8 +20,14 @@ interface Props {
 }
 
 export const AudioStep: React.FC<Props> = ({ state, updateState, audioProps, applyPreset, savePreset, deletePreset }) => {
-  const [showSave, setShowSave] = React.useState(false);
-  const [presetName, setPresetName] = React.useState('');
+  const [showSave, setShowSave] = useState(false);
+  const [presetName, setPresetName] = useState('');
+  
+  // Recording State
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const timerRef = useRef<number | null>(null);
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -30,17 +37,100 @@ export const AudioStep: React.FC<Props> = ({ state, updateState, audioProps, app
     }
   };
 
+  const startRecording = async () => {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        const chunks: Blob[] = [];
+
+        recorder.ondataavailable = (e) => {
+            if (e.data.size > 0) chunks.push(e.data);
+        };
+
+        recorder.onstop = () => {
+            const blob = new Blob(chunks, { type: 'audio/webm' });
+            const file = new File([blob], `recording-${Date.now()}.webm`, { type: 'audio/webm' });
+            const url = URL.createObjectURL(file);
+            updateState({ audioFile: file, audioUrl: url });
+            
+            // Stop all tracks to release mic
+            stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorderRef.current = recorder;
+        recorder.start();
+        setIsRecording(true);
+        setRecordingTime(0);
+
+        timerRef.current = window.setInterval(() => {
+            setRecordingTime(prev => prev + 1);
+        }, 1000);
+
+    } catch (err) {
+        alert("لا يمكن الوصول للميكروفون. يرجى التأكد من السماح بالأذونات.");
+        console.error(err);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+        mediaRecorderRef.current.stop();
+        setIsRecording(false);
+        if (timerRef.current) clearInterval(timerRef.current);
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 flex-1">
       <div className="text-center">
-        <h2 className="text-xl font-bold font-rakkas mb-2">رفع التلاوة</h2>
-        {!state.audioFile ? (
-          <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 md:p-12 hover:border-emerald-500/50 hover:bg-slate-800/30 transition-all cursor-pointer relative group">
-            {/* Accepted all audio types */}
-            <input type="file" accept="audio/*" onChange={handleUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
-            <Upload className="w-12 h-12 text-slate-500 mx-auto mb-4 group-hover:text-emerald-400 transition-colors" />
-            <p className="text-slate-400 group-hover:text-slate-300">اضغط للرفع أو اسحب الملف هنا (جميع الصيغ مدعومة)</p>
+        <h2 className="text-xl font-bold font-rakkas mb-2">إضافة الصوت</h2>
+        
+        {!state.audioFile && !isRecording ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+              {/* Upload Option */}
+              <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 hover:border-emerald-500/50 hover:bg-slate-800/30 transition-all cursor-pointer relative group flex flex-col items-center justify-center gap-4 h-48">
+                <input type="file" accept="audio/*" onChange={handleUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 group-hover:text-emerald-400 transition-colors">
+                    <Upload size={28} />
+                </div>
+                <p className="text-slate-400 font-bold group-hover:text-slate-300">رفع ملف صوتي</p>
+                <span className="text-[10px] text-slate-500">MP3, WAV, M4A</span>
+              </div>
+
+              {/* Record Option */}
+              <button 
+                onClick={startRecording}
+                className="border-2 border-dashed border-slate-700 rounded-xl p-8 hover:border-red-500/50 hover:bg-slate-800/30 transition-all cursor-pointer flex flex-col items-center justify-center gap-4 h-48 group"
+              >
+                <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 group-hover:text-red-400 transition-colors">
+                    <Mic size={28} />
+                </div>
+                <p className="text-slate-400 font-bold group-hover:text-slate-300">تسجيل مباشر</p>
+                <span className="text-[10px] text-slate-500">استخدام الميكروفون</span>
+              </button>
           </div>
+        ) : isRecording ? (
+            <div className="bg-slate-900 border border-red-500/30 rounded-xl p-8 max-w-md mx-auto text-center space-y-6 animate-pulse">
+                <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto text-red-500 border border-red-500/20">
+                    <Mic size={32} className="animate-bounce" />
+                </div>
+                <div>
+                    <h3 className="text-xl font-bold text-white mb-1">جاري التسجيل...</h3>
+                    <p className="text-3xl font-mono text-red-400">{formatTime(recordingTime)}</p>
+                </div>
+                <button 
+                    onClick={stopRecording}
+                    className="bg-red-600 hover:bg-red-500 text-white px-8 py-3 rounded-full font-bold shadow-lg transition-transform hover:scale-105 flex items-center justify-center gap-2 mx-auto"
+                >
+                    <Square size={18} fill="currentColor" /> إيقاف وحفظ
+                </button>
+            </div>
         ) : (
           <div className="bg-slate-950/50 rounded-xl p-4 md:p-6 border border-slate-800">
             <div className="flex items-center justify-between mb-6">
@@ -49,10 +139,18 @@ export const AudioStep: React.FC<Props> = ({ state, updateState, audioProps, app
                   <FileAudio />
                 </div>
                 <div className="text-right overflow-hidden">
-                  <p className="font-medium text-slate-200 truncate" dir="ltr">{state.audioFile.name}</p>
-                  <p className="text-xs text-slate-500">
-                     {audioProps.isPlaying ? "جاري التشغيل..." : "جاهز"}
-                  </p>
+                  <p className="font-medium text-slate-200 truncate" dir="ltr">{state.audioFile?.name}</p>
+                  <div className="flex items-center gap-3">
+                      <p className="text-xs text-slate-500">
+                        {audioProps.isPlaying ? "جاري التشغيل..." : "جاهز"}
+                      </p>
+                      <button 
+                        onClick={() => updateState({ audioFile: null, audioUrl: null })}
+                        className="text-[10px] text-red-400 hover:text-red-300 flex items-center gap-1 bg-red-900/10 px-2 py-0.5 rounded border border-red-900/20"
+                      >
+                          <Trash2 size={10} /> حذف
+                      </button>
+                  </div>
                 </div>
               </div>
               <button 

@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
-import { AppState, AudioPreset, UnsplashImage, HistoryItem } from './types';
+import { AppState, AudioPreset, UnsplashImage, HistoryItem, AspectRatio, QuranConfig } from './types';
 import { AUDIO_PRESETS } from './constants';
-import { fetchIslamicImages } from './services/unsplashService';
+import { fetchPexelsAssets, StockAsset } from './services/unsplashService'; // Updated Service
 import { useAudioProcessing } from './hooks/useAudioProcessing';
 import { useVideoExport } from './hooks/useVideoExport';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
@@ -10,15 +11,17 @@ import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { Header } from './components/Header';
 import { StepWizard } from './components/StepWizard';
 import { HistorySidebar } from './components/HistorySidebar';
-import { ChangelogModal } from './components/ChangelogModal';
+import { DocumentationModal } from './components/DocumentationModal';
 import { DetailsStep } from './components/steps/DetailsStep';
 import { BackgroundStep } from './components/steps/BackgroundStep';
 import { AudioStep } from './components/steps/AudioStep';
+import { TextOverlayStep } from './components/steps/TextOverlayStep'; 
+import { GlobalStyleStep } from './components/steps/GlobalStyleStep'; 
 import { QualityStep } from './components/steps/QualityStep';
 import { StyleStep } from './components/steps/StyleStep';
 import { ExportStep } from './components/steps/ExportStep';
 
-const CURRENT_VERSION = '2.1';
+const CURRENT_VERSION = '3.0'; 
 
 export default function App() {
   // --- Global State ---
@@ -27,6 +30,9 @@ export default function App() {
     readerName: '',
     surahName: '',
     
+    // Video Config
+    aspectRatio: '16:9', 
+
     // Backgrounds
     selectedAssets: [],
     
@@ -42,23 +48,51 @@ export default function App() {
     selectedPresetId: 'custom',
     customPresets: [],
     
+    // Quran Text Default State
+    quranConfig: {
+      isEnabled: false,
+      surahNumber: 1,
+      fromAyah: 1,
+      toAyah: 7,
+      verses: [],
+      timings: [],
+      style: {
+        font: 'Amiri Quran',
+        color: '#ffffff',
+        fontSizeScale: 1,
+        hasShadow: true
+      },
+      position: { x: 50, y: 50 },
+      highlightColor: '#10b981', 
+      highlights: [],
+      apiKeys: [],
+      generateNoTextVariant: false 
+    },
+
+    // Global Style
+    globalStyle: {
+        transitionType: 'fade', 
+        textAnimation: 'fade', 
+        autoHighlights: []
+    },
+
     // Video Settings
     resolution: '1080p',
     fps: 30,
+    format: 'mp4',
     
-    // Style / Typography (Updated defaults)
-    surahPosition: { x: 50, y: 50 }, 
+    // Style / Typography 
+    surahPosition: { x: 50, y: 15 }, 
     readerPosition: { x: 50, y: 85 },
-    
     surahStyle: {
         font: 'Amiri',
-        color: '#fbbf24', // Gold
+        color: '#fbbf24', 
         fontSizeScale: 1,
         hasShadow: true
     },
     readerStyle: {
         font: 'Amiri',
-        color: '#ffffff', // White
+        color: '#ffffff', 
         fontSizeScale: 1,
         hasShadow: true
     },
@@ -71,9 +105,15 @@ export default function App() {
   });
 
   const [images, setImages] = useState<UnsplashImage[]>([]);
-  const [loadingImages, setLoadingImages] = useState(false);
+  const [videos, setVideos] = useState<StockAsset[]>([]);
+  const [loadingAssets, setLoadingAssets] = useState(false);
+  
+  // Export State
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
-  const [showChangelog, setShowChangelog] = useState(false);
+  const [generatedNoTextUrl, setGeneratedNoTextUrl] = useState<string | null>(null);
+
+  const [showDocs, setShowDocs] = useState(false);
+  const [startTime, setStartTime] = useState<number>(0);
 
   // --- Hooks ---
   const { 
@@ -93,6 +133,8 @@ export default function App() {
     const savedPresetId = localStorage.getItem('lastPresetId');
     const savedCustomPresets = localStorage.getItem('customPresets');
     const savedHistory = localStorage.getItem('videoHistory');
+    const savedKeys = localStorage.getItem('geminiApiKeys'); 
+    const hasSeenDocs = localStorage.getItem('hasSeenDocs');
     
     let parsedPresets: AudioPreset[] = [];
     if (savedCustomPresets) {
@@ -104,10 +146,16 @@ export default function App() {
         try { parsedHistory = JSON.parse(savedHistory); } catch (e) {}
     }
 
+    let parsedKeys: string[] = [];
+    if (savedKeys) {
+        try { parsedKeys = JSON.parse(savedKeys); } catch(e) {}
+    }
+
     setState(s => ({
       ...s,
       customPresets: parsedPresets,
-      history: parsedHistory
+      history: parsedHistory,
+      quranConfig: { ...s.quranConfig, apiKeys: parsedKeys }
     }));
 
     if (savedPresetId) {
@@ -119,25 +167,52 @@ export default function App() {
       }
     }
 
-    // 2. Check Version for Changelog Modal
-    const lastSeenVersion = localStorage.getItem('app_version');
-    if (lastSeenVersion !== CURRENT_VERSION) {
-        setShowChangelog(true);
+    // First time user check
+    if (!hasSeenDocs) {
+        setShowDocs(true);
     }
 
   }, []);
 
-  const fetchImages = async () => {
-    setLoadingImages(true);
-    // Always fetch a fresh page or random set
-    const imgs = await fetchIslamicImages(1);
-    setImages(prev => [...prev, ...imgs]); 
-    setLoadingImages(false);
+  // Time Estimation Effect
+  useEffect(() => {
+    if (isExporting) {
+        if (exportProgress <= 20) {
+            setStartTime(Date.now());
+        } else {
+            const elapsed = Date.now() - startTime;
+            const realProgress = (exportProgress - 20) / 80;
+            
+            if (realProgress > 0.05) {
+                const totalEstimated = elapsed / realProgress;
+                const remaining = totalEstimated - elapsed;
+                
+                const seconds = Math.ceil(remaining / 1000);
+                let timeStr = "";
+                if (seconds < 60) timeStr = `${seconds} ثانية`;
+                else {
+                     const minutes = Math.floor(seconds / 60);
+                     timeStr = `${minutes} دقيقة و ${seconds % 60} ثانية`;
+                }
+                updateState({ timeRemaining: timeStr });
+            }
+        }
+    } else {
+        updateState({ timeRemaining: undefined });
+    }
+  }, [isExporting, exportProgress]);
+
+  const fetchAssets = async () => {
+    setLoadingAssets(true);
+    const { images: newImages, videos: newVideos } = await fetchPexelsAssets();
+    setImages(newImages);
+    setVideos(newVideos);
+    setLoadingAssets(false);
   };
 
   useEffect(() => {
-    if (state.step === 2 && images.length === 0) {
-      fetchImages();
+    if (state.step === 2) {
+      fetchAssets();
     }
   }, [state.step]);
 
@@ -147,12 +222,11 @@ export default function App() {
     }
   }, [state.step, isPlaying, pause]);
 
-  // --- Helper Methods ---
   const updateState = (updates: Partial<AppState>) => setState(s => ({ ...s, ...updates }));
-
-  const closeChangelog = () => {
-      setShowChangelog(false);
-      localStorage.setItem('app_version', CURRENT_VERSION);
+  
+  const closeDocs = () => {
+      setShowDocs(false);
+      localStorage.setItem('hasSeenDocs', 'true');
   };
 
   const applyPreset = (preset: AudioPreset) => {
@@ -196,32 +270,50 @@ export default function App() {
           timestamp: Date.now(),
           surahName: state.surahName,
           readerName: state.readerName,
-          resolution: state.resolution
+          resolution: state.resolution,
+          aspectRatio: state.aspectRatio
       };
       const updatedHistory = [newItem, ...state.history];
       updateState({ history: updatedHistory });
       localStorage.setItem('videoHistory', JSON.stringify(updatedHistory));
   };
 
-  // --- Handlers ---
-  const handleNext = () => setState(s => ({ ...s, step: Math.min(s.step + 1, 6) }));
+  const handleNext = () => setState(s => ({ ...s, step: Math.min(s.step + 1, 8) }));
   const handleBack = () => setState(s => ({ ...s, step: Math.max(s.step - 1, 1) }));
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     updateState({ isProcessing: true });
-    generateVideo(state, audioBuffer, (url) => {
-      setGeneratedVideoUrl(url);
-      updateState({ isProcessing: false });
-      addToHistory();
+    
+    // 1. Generate Main Video (With Text)
+    generateVideo(state, audioBuffer, false, (url1) => {
+        setGeneratedVideoUrl(url1);
+        
+        // 2. Check if No-Text variant is requested
+        if (state.quranConfig.generateNoTextVariant && state.quranConfig.isEnabled) {
+             // Small delay to let UI breathe
+             setTimeout(() => {
+                generateVideo(state, audioBuffer, true, (url2) => {
+                    setGeneratedNoTextUrl(url2);
+                    updateState({ isProcessing: false });
+                    addToHistory();
+                });
+             }, 500);
+        } else {
+            updateState({ isProcessing: false });
+            addToHistory();
+        }
     });
   };
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 selection:bg-emerald-500/30 font-amiri" dir="rtl">
       
-      <ChangelogModal isOpen={showChangelog} onClose={closeChangelog} />
+      <DocumentationModal isOpen={showDocs} onClose={closeDocs} />
 
-      <Header onToggleHistory={() => updateState({ showHistory: !state.showHistory })} />
+      <Header 
+        onToggleHistory={() => updateState({ showHistory: !state.showHistory })} 
+        onToggleDocs={() => setShowDocs(true)}
+      />
       
       <HistorySidebar 
         isOpen={state.showHistory} 
@@ -238,6 +330,7 @@ export default function App() {
             <DetailsStep 
               surahName={state.surahName} 
               readerName={state.readerName} 
+              aspectRatio={state.aspectRatio}
               updateState={updateState} 
             />
           )}
@@ -246,8 +339,9 @@ export default function App() {
             <BackgroundStep 
               selectedAssets={state.selectedAssets}
               images={images}
-              loading={loadingImages}
-              onRefresh={fetchImages}
+              videos={videos}
+              loading={loadingAssets}
+              onRefresh={fetchAssets}
               updateState={updateState}
             />
           )}
@@ -264,30 +358,50 @@ export default function App() {
           )}
 
           {state.step === 4 && (
+            <TextOverlayStep 
+              state={state}
+              updateState={updateState}
+              audioDuration={duration}
+            />
+          )}
+
+          {state.step === 5 && (
+            <GlobalStyleStep 
+              state={state}
+              updateState={updateState}
+            />
+          )}
+
+          {state.step === 6 && (
             <StyleStep 
               state={state}
               updateState={updateState}
             />
           )}
 
-          {state.step === 5 && (
+          {state.step === 7 && (
             <QualityStep 
               resolution={state.resolution}
               fps={state.fps}
+              format={state.format}
               updateState={updateState}
             />
           )}
 
-          {state.step === 6 && (
+          {state.step === 8 && (
             <ExportStep 
               state={state}
               isExporting={isExporting}
               exportProgress={exportProgress}
               generatedVideoUrl={generatedVideoUrl}
+              generatedNoTextUrl={generatedNoTextUrl}
               onGenerate={handleGenerate}
               onReset={() => {
                 setGeneratedVideoUrl(null);
+                setGeneratedNoTextUrl(null);
                 updateState({ step: 1 });
+                setImages([]); 
+                setVideos([]);
               }}
             />
           )}
@@ -303,7 +417,7 @@ export default function App() {
                 <ChevronRight size={20} className="ml-1" /> السابق
               </button>
               
-              {state.step < 6 && (
+              {state.step < 8 && (
                 <button 
                   onClick={handleNext}
                   disabled={
