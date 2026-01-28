@@ -54,7 +54,7 @@ export const ExportStep: React.FC<Props> = ({ state, isExporting, exportProgress
             <Settings className="w-10 h-10 text-emerald-500 animate-slow-spin" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white mb-2 font-rakkas">جاهز لإنشاء الفيديو (V2.1)</h2>
+            <h2 className="text-2xl font-bold text-white mb-2 font-rakkas">جاهز لإنشاء الفيديو (V3.0)</h2>
             <div className="flex justify-center gap-4 text-xs text-slate-400 font-mono mb-2">
               <span className="bg-slate-800 px-2 py-1 rounded border border-slate-700">{state.resolution}</span>
               <span className="bg-slate-800 px-2 py-1 rounded border border-slate-700">{state.fps} FPS</span>
