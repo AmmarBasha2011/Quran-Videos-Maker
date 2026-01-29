@@ -1,14 +1,19 @@
 import React from 'react';
 import { CheckCircle } from 'lucide-react';
-import { STEPS } from '../constants';
+
+interface Step {
+  id: number;
+  label: string;
+}
 
 interface StepWizardProps {
   currentStep: number;
+  steps: Step[];
 }
 
-export const StepWizard: React.FC<StepWizardProps> = ({ currentStep }) => (
+export const StepWizard: React.FC<StepWizardProps> = ({ currentStep, steps }) => (
   <div className="flex justify-between items-center mb-8 px-2 md:px-4 max-w-2xl mx-auto overflow-x-auto pb-4 md:pb-0">
-    {STEPS.map((step) => {
+    {steps.map((step) => {
       const isActive = currentStep === step.id;
       const isDone = currentStep > step.id;
       return (

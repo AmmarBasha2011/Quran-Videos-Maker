@@ -8,14 +8,15 @@ interface Props {
   isExporting: boolean;
   exportProgress: number;
   generatedVideoUrl: string | null;
-  generatedNoTextUrl: string | null; // New prop for second video
+  generatedNoTextUrl: string | null; 
+  generatedExtension: string; // New prop for actual extension
   onGenerate: () => void;
   onReset: () => void;
 }
 
 const DHIKR_LIST = ['سُبْحَانَ اللَّهِ', 'الْحَمْدُ لِلَّهِ', 'لَا إِلَهَ إِلَّا اللَّهُ', 'اللَّهُ أَكْبَرُ'];
 
-export const ExportStep: React.FC<Props> = ({ state, isExporting, exportProgress, generatedVideoUrl, generatedNoTextUrl, onGenerate, onReset }) => {
+export const ExportStep: React.FC<Props> = ({ state, isExporting, exportProgress, generatedVideoUrl, generatedNoTextUrl, generatedExtension, onGenerate, onReset }) => {
   const [count, setCount] = useState(0);
   const [dhikrIndex, setDhikrIndex] = useState(0);
   const [animateClick, setAnimateClick] = useState(false);
@@ -34,9 +35,9 @@ export const ExportStep: React.FC<Props> = ({ state, isExporting, exportProgress
     setTimeout(() => setAnimateClick(false), 150);
   };
   
-  const extension = state.format || 'mp4';
+  // Use the actual extension returned by the recording process
+  const extension = generatedExtension || state.format || 'mp4';
 
-  // Helper text for status
   let statusText = "جاري إنشاء الفيديو...";
   if (state.quranConfig.generateNoTextVariant && generatedVideoUrl && !generatedNoTextUrl) {
       statusText = "جاري إنشاء النسخة الثانية (بدون نصوص)...";
@@ -54,10 +55,11 @@ export const ExportStep: React.FC<Props> = ({ state, isExporting, exportProgress
             <Settings className="w-10 h-10 text-emerald-500 animate-slow-spin" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white mb-2 font-rakkas">جاهز لإنشاء الفيديو (V3.0)</h2>
+            <h2 className="text-2xl font-bold text-white mb-2 font-rakkas">جاهز لإنشاء الفيديو (V3.1)</h2>
             <div className="flex justify-center gap-4 text-xs text-slate-400 font-mono mb-2">
               <span className="bg-slate-800 px-2 py-1 rounded border border-slate-700">{state.resolution}</span>
               <span className="bg-slate-800 px-2 py-1 rounded border border-slate-700">{state.fps} FPS</span>
+              {/* Show intended format, actual may vary based on browser support */}
               <span className="bg-slate-800 px-2 py-1 rounded border border-slate-700 uppercase">{state.format || 'MP4'}</span>
             </div>
             {state.quranConfig.generateNoTextVariant && (
@@ -159,7 +161,10 @@ export const ExportStep: React.FC<Props> = ({ state, isExporting, exportProgress
               className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-4 rounded-xl font-bold shadow-lg transition-all flex items-center justify-between group"
             >
               <span className="flex items-center gap-2"><FileVideo size={20}/> تحميل الفيديو (مع الآيات)</span>
-              <Download className="w-5 h-5 group-hover:translate-y-1 transition-transform" />
+              <div className="flex items-center gap-2">
+                  <span className="text-[10px] bg-emerald-700 px-2 py-1 rounded uppercase font-mono">{extension}</span>
+                  <Download className="w-5 h-5 group-hover:translate-y-1 transition-transform" />
+              </div>
             </a>
 
             {/* No Text Variant */}
@@ -170,7 +175,10 @@ export const ExportStep: React.FC<Props> = ({ state, isExporting, exportProgress
                 className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-4 rounded-xl font-bold shadow-lg transition-all flex items-center justify-between group border border-slate-700"
                 >
                 <span className="flex items-center gap-2"><FileVideo size={20}/> تحميل النسخة الخام (بدون آيات)</span>
-                <Download className="w-5 h-5 group-hover:translate-y-1 transition-transform" />
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] bg-slate-900 px-2 py-1 rounded uppercase font-mono">{extension}</span>
+                    <Download className="w-5 h-5 group-hover:translate-y-1 transition-transform" />
+                </div>
                 </a>
             )}
 

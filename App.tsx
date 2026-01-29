@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { AppState, AudioPreset, UnsplashImage, HistoryItem, AspectRatio, QuranConfig } from './types';
-import { AUDIO_PRESETS } from './constants';
-import { fetchPexelsAssets, StockAsset } from './services/unsplashService'; // Updated Service
+import { AppState, AudioPreset, UnsplashImage, HistoryItem, AspectRatio, QuranConfig, AppMode } from './types';
+import { AUDIO_PRESETS, UPLOAD_MODE_STEPS, RECITER_MODE_STEPS } from './constants';
+import { fetchPexelsAssets, StockAsset } from './services/unsplashService'; 
 import { useAudioProcessing } from './hooks/useAudioProcessing';
 import { useVideoExport } from './hooks/useVideoExport';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
@@ -10,9 +10,12 @@ import { ChevronRight, ChevronLeft } from 'lucide-react';
 // Components
 import { Header } from './components/Header';
 import { StepWizard } from './components/StepWizard';
-import { HistorySidebar } from './components/HistorySidebar';
-import { DocumentationModal } from './components/DocumentationModal';
+// Removed HistorySidebar import
+
+// Steps
+import { ModeSelectionStep } from './components/steps/ModeSelectionStep';
 import { DetailsStep } from './components/steps/DetailsStep';
+import { ReciterSetupStep } from './components/steps/ReciterSetupStep'; 
 import { BackgroundStep } from './components/steps/BackgroundStep';
 import { AudioStep } from './components/steps/AudioStep';
 import { TextOverlayStep } from './components/steps/TextOverlayStep'; 
@@ -21,17 +24,22 @@ import { QualityStep } from './components/steps/QualityStep';
 import { StyleStep } from './components/steps/StyleStep';
 import { ExportStep } from './components/steps/ExportStep';
 
-const CURRENT_VERSION = '3.0'; 
+const CURRENT_VERSION = '3.1'; 
 
 export default function App() {
   // --- Global State ---
   const [state, setState] = useState<AppState>({
     step: 1,
+    mode: 'upload', 
+
     readerName: '',
     surahName: '',
     
     // Video Config
     aspectRatio: '16:9', 
+
+    // Reciter Mode
+    selectedReciterId: null,
 
     // Backgrounds
     selectedAssets: [],
@@ -111,8 +119,8 @@ export default function App() {
   // Export State
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
   const [generatedNoTextUrl, setGeneratedNoTextUrl] = useState<string | null>(null);
+  const [generatedExtension, setGeneratedExtension] = useState<string>('mp4'); // Store actual extension
 
-  const [showDocs, setShowDocs] = useState(false);
   const [startTime, setStartTime] = useState<number>(0);
 
   // --- Hooks ---
@@ -127,14 +135,16 @@ export default function App() {
 
   const { isExporting, exportProgress, generateVideo } = useVideoExport();
 
+  // --- Logic Helpers ---
+  const updateState = (updates: Partial<AppState>) => setState(s => ({ ...s, ...updates }));
+
   // --- Effects ---
   useEffect(() => {
-    // 1. Load LocalStorage Data
+    // Load LocalStorage Data
     const savedPresetId = localStorage.getItem('lastPresetId');
     const savedCustomPresets = localStorage.getItem('customPresets');
     const savedHistory = localStorage.getItem('videoHistory');
     const savedKeys = localStorage.getItem('geminiApiKeys'); 
-    const hasSeenDocs = localStorage.getItem('hasSeenDocs');
     
     let parsedPresets: AudioPreset[] = [];
     if (savedCustomPresets) {
@@ -166,22 +176,16 @@ export default function App() {
         if (customPreset) applyPreset(customPreset);
       }
     }
-
-    // First time user check
-    if (!hasSeenDocs) {
-        setShowDocs(true);
-    }
-
   }, []);
 
-  // Time Estimation Effect
+  // Time Estimation
   useEffect(() => {
     if (isExporting) {
-        if (exportProgress <= 20) {
+        if (exportProgress <= 10) {
             setStartTime(Date.now());
         } else {
             const elapsed = Date.now() - startTime;
-            const realProgress = (exportProgress - 20) / 80;
+            const realProgress = (exportProgress - 10) / 90;
             
             if (realProgress > 0.05) {
                 const totalEstimated = elapsed / realProgress;
@@ -202,6 +206,7 @@ export default function App() {
     }
   }, [isExporting, exportProgress]);
 
+  // Asset Fetching
   const fetchAssets = async () => {
     setLoadingAssets(true);
     const { images: newImages, videos: newVideos } = await fetchPexelsAssets();
@@ -211,23 +216,16 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (state.step === 2) {
+    if (state.step === 3) {
       fetchAssets();
     }
   }, [state.step]);
 
   useEffect(() => {
-    if (state.step !== 3 && isPlaying) {
+    if (state.mode === 'upload' && state.step !== 4 && isPlaying) {
         pause();
     }
-  }, [state.step, isPlaying, pause]);
-
-  const updateState = (updates: Partial<AppState>) => setState(s => ({ ...s, ...updates }));
-  
-  const closeDocs = () => {
-      setShowDocs(false);
-      localStorage.setItem('hasSeenDocs', 'true');
-  };
+  }, [state.step, isPlaying, pause, state.mode]);
 
   const applyPreset = (preset: AudioPreset) => {
     updateState({
@@ -278,19 +276,19 @@ export default function App() {
       localStorage.setItem('videoHistory', JSON.stringify(updatedHistory));
   };
 
-  const handleNext = () => setState(s => ({ ...s, step: Math.min(s.step + 1, 8) }));
+  // --- NAVIGATION ---
+  const handleNext = () => setState(s => ({ ...s, step: Math.min(s.step + 1, 9) }));
   const handleBack = () => setState(s => ({ ...s, step: Math.max(s.step - 1, 1) }));
 
   const handleGenerate = async () => {
     updateState({ isProcessing: true });
     
-    // 1. Generate Main Video (With Text)
-    generateVideo(state, audioBuffer, false, (url1) => {
+    // Pass callback for extension
+    generateVideo(state, audioBuffer, false, (url1, ext) => {
         setGeneratedVideoUrl(url1);
+        setGeneratedExtension(ext);
         
-        // 2. Check if No-Text variant is requested
-        if (state.quranConfig.generateNoTextVariant && state.quranConfig.isEnabled) {
-             // Small delay to let UI breathe
+        if (state.quranConfig.generateNoTextVariant) {
              setTimeout(() => {
                 generateVideo(state, audioBuffer, true, (url2) => {
                     setGeneratedNoTextUrl(url2);
@@ -305,125 +303,110 @@ export default function App() {
     });
   };
 
+  // --- RENDER COMPONENT BY STEP ---
+  const renderStep = () => {
+      if (state.step === 1) {
+          return <ModeSelectionStep onSelect={(mode) => {
+              updateState({ mode, step: 2 });
+              if (mode === 'reciter') {
+                  updateState({ audioFile: null, audioUrl: null, quranConfig: { ...state.quranConfig, isEnabled: true } });
+              }
+          }} />;
+      }
+
+      if (state.step === 2) {
+          if (state.mode === 'upload') {
+              return <DetailsStep surahName={state.surahName} readerName={state.readerName} aspectRatio={state.aspectRatio} updateState={updateState} />;
+          } else {
+              return <ReciterSetupStep state={state} updateState={updateState} />;
+          }
+      }
+
+      if (state.step === 3) {
+          return <BackgroundStep selectedAssets={state.selectedAssets} images={images} videos={videos} loading={loadingAssets} onRefresh={fetchAssets} updateState={updateState} />;
+      }
+
+      if (state.mode === 'upload') {
+          if (state.step === 4) return <AudioStep state={state} updateState={updateState} audioProps={{ isPlaying, duration, currentTime, isReady, togglePlay }} applyPreset={applyPreset} savePreset={saveCustomPreset} deletePreset={deleteCustomPreset} />;
+          if (state.step === 5) return <TextOverlayStep state={state} updateState={updateState} audioDuration={duration} />;
+          if (state.step === 6) return <GlobalStyleStep state={state} updateState={updateState} />;
+          if (state.step === 7) return <StyleStep state={state} updateState={updateState} />;
+          if (state.step === 8) return <QualityStep resolution={state.resolution} fps={state.fps} format={state.format} updateState={updateState} />;
+          if (state.step === 9) return <ExportStep state={state} isExporting={isExporting} exportProgress={exportProgress} generatedVideoUrl={generatedVideoUrl} generatedNoTextUrl={generatedNoTextUrl} generatedExtension={generatedExtension} onGenerate={handleGenerate} onReset={() => {
+              updateState({ step: 1, selectedAssets: [] });
+              setImages([]);
+              setVideos([]);
+              setGeneratedVideoUrl(null);
+              setGeneratedNoTextUrl(null);
+          }} />;
+      }
+
+      if (state.mode === 'reciter') {
+          if (state.step === 6) return <GlobalStyleStep state={state} updateState={updateState} />;
+          if (state.step === 7) return <StyleStep state={state} updateState={updateState} />;
+          if (state.step === 8) return <QualityStep resolution={state.resolution} fps={state.fps} format={state.format} updateState={updateState} />;
+          if (state.step === 9) return <ExportStep state={state} isExporting={isExporting} exportProgress={exportProgress} generatedVideoUrl={generatedVideoUrl} generatedNoTextUrl={generatedNoTextUrl} generatedExtension={generatedExtension} onGenerate={handleGenerate} onReset={() => {
+              updateState({ step: 1, selectedAssets: [] });
+              setImages([]);
+              setVideos([]);
+              setGeneratedVideoUrl(null);
+              setGeneratedNoTextUrl(null);
+          }} />;
+      }
+
+      return null;
+  };
+
+  const safeNext = () => {
+      if (state.mode === 'reciter' && state.step === 3) {
+          setState(s => ({ ...s, step: 6 }));
+      } else {
+          handleNext();
+      }
+  };
+  const safeBack = () => {
+      if (state.mode === 'reciter' && state.step === 6) {
+          setState(s => ({ ...s, step: 3 }));
+      } else {
+          handleBack();
+      }
+  };
+
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 selection:bg-emerald-500/30 font-amiri" dir="rtl">
       
-      <DocumentationModal isOpen={showDocs} onClose={closeDocs} />
-
-      <Header 
-        onToggleHistory={() => updateState({ showHistory: !state.showHistory })} 
-        onToggleDocs={() => setShowDocs(true)}
-      />
+      {/* Header with removed props */}
+      <Header />
       
-      <HistorySidebar 
-        isOpen={state.showHistory} 
-        onClose={() => updateState({ showHistory: false })} 
-        history={state.history}
-      />
+      {/* Removed HistorySidebar component */}
 
       <main className="max-w-4xl mx-auto p-4 md:p-6 relative pb-24 md:pb-6">
-        <StepWizard currentStep={state.step} />
+        <StepWizard 
+            currentStep={state.step} 
+            steps={state.mode === 'upload' ? UPLOAD_MODE_STEPS : RECITER_MODE_STEPS} 
+        />
 
         <div className="bg-slate-900/50 border border-slate-800/50 backdrop-blur-sm rounded-2xl p-4 md:p-8 min-h-[500px] shadow-2xl relative overflow-hidden flex flex-col">
           
-          {state.step === 1 && (
-            <DetailsStep 
-              surahName={state.surahName} 
-              readerName={state.readerName} 
-              aspectRatio={state.aspectRatio}
-              updateState={updateState} 
-            />
-          )}
+          {renderStep()}
 
-          {state.step === 2 && (
-            <BackgroundStep 
-              selectedAssets={state.selectedAssets}
-              images={images}
-              videos={videos}
-              loading={loadingAssets}
-              onRefresh={fetchAssets}
-              updateState={updateState}
-            />
-          )}
-
-          {state.step === 3 && (
-            <AudioStep 
-              state={state} 
-              updateState={updateState}
-              audioProps={{ isPlaying, duration, currentTime, isReady, togglePlay }}
-              applyPreset={applyPreset}
-              savePreset={saveCustomPreset}
-              deletePreset={deleteCustomPreset}
-            />
-          )}
-
-          {state.step === 4 && (
-            <TextOverlayStep 
-              state={state}
-              updateState={updateState}
-              audioDuration={duration}
-            />
-          )}
-
-          {state.step === 5 && (
-            <GlobalStyleStep 
-              state={state}
-              updateState={updateState}
-            />
-          )}
-
-          {state.step === 6 && (
-            <StyleStep 
-              state={state}
-              updateState={updateState}
-            />
-          )}
-
-          {state.step === 7 && (
-            <QualityStep 
-              resolution={state.resolution}
-              fps={state.fps}
-              format={state.format}
-              updateState={updateState}
-            />
-          )}
-
-          {state.step === 8 && (
-            <ExportStep 
-              state={state}
-              isExporting={isExporting}
-              exportProgress={exportProgress}
-              generatedVideoUrl={generatedVideoUrl}
-              generatedNoTextUrl={generatedNoTextUrl}
-              onGenerate={handleGenerate}
-              onReset={() => {
-                setGeneratedVideoUrl(null);
-                setGeneratedNoTextUrl(null);
-                updateState({ step: 1 });
-                setImages([]); 
-                setVideos([]);
-              }}
-            />
-          )}
-
-          {/* Navigation Buttons */}
-          {!isExporting && !generatedVideoUrl && (
+          {!isExporting && !generatedVideoUrl && state.step > 1 && (
             <div className="md:absolute md:bottom-6 md:left-0 md:w-full md:px-8 flex justify-between items-center mt-auto pt-6 md:pt-0">
               <button 
-                onClick={handleBack}
-                disabled={state.step === 1}
+                onClick={safeBack}
                 className="flex items-center text-slate-500 hover:text-white disabled:opacity-0 transition-all px-4 py-2"
               >
                 <ChevronRight size={20} className="ml-1" /> السابق
               </button>
               
-              {state.step < 8 && (
+              {state.step < 9 && (
                 <button 
-                  onClick={handleNext}
+                  onClick={safeNext}
                   disabled={
-                    (state.step === 1 && (!state.surahName || !state.readerName)) ||
-                    (state.step === 2 && state.selectedAssets.length === 0) ||
-                    (state.step === 3 && !state.audioFile)
+                    (state.step === 2 && state.mode === 'upload' && (!state.surahName || !state.readerName)) ||
+                    (state.step === 2 && state.mode === 'reciter' && !state.selectedReciterId) ||
+                    (state.step === 3 && state.selectedAssets.length === 0) ||
+                    (state.step === 4 && state.mode === 'upload' && !state.audioFile)
                   }
                   className="flex items-center bg-white text-black px-6 py-2 rounded-full font-bold hover:bg-emerald-400 transition-all disabled:opacity-50 disabled:hover:bg-white disabled:cursor-not-allowed shadow-lg"
                 >

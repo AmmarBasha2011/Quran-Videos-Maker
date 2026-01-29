@@ -1,13 +1,13 @@
 
 import { useState, useCallback, useRef } from 'react';
-import { AppState, BackgroundAsset, TextStyle, Resolution } from '../types';
+import { AppState, BackgroundAsset, TextStyle, Resolution, VerseTiming } from '../types';
 import { getDimensions } from '../constants';
+import { prepareReciterAudio } from '../services/audioService';
 
 export const useVideoExport = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
 
-  // We use refs to be able to cancel processes cleanly if component unmounts
   const recorderRef = useRef<MediaRecorder | null>(null);
   const animationFrameRef = useRef<number>(0);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -15,17 +15,13 @@ export const useVideoExport = () => {
 
   const generateVideo = useCallback(async (
     state: AppState, 
-    audioBuffer: AudioBuffer | null,
+    uploadAudioBuffer: AudioBuffer | null, 
     forceNoText: boolean = false, 
-    onComplete: (url: string) => void
+    onComplete: (url: string, extension: string) => void
   ) => {
-    // Basic Validation
+    // Validation
     if (state.selectedAssets.length === 0) {
-        alert("يرجى اختيار وسائط (صور أو فيديو) من مكتبة الخلفيات");
-        return;
-    }
-    if (!audioBuffer) {
-        alert("يرجى اختيار ملف صوتي");
+        alert("يرجى اختيار وسائط من مكتبة الخلفيات");
         return;
     }
 
@@ -33,17 +29,49 @@ export const useVideoExport = () => {
     setExportProgress(0);
 
     try {
-        // 1. Setup Canvas
+        // --- 1. Audio Preparation Strategy ---
+        let finalAudioBuffer: AudioBuffer | null = null;
+        let finalTimings: VerseTiming[] = state.quranConfig.timings;
+
+        if (state.mode === 'upload') {
+            if (!uploadAudioBuffer) { alert("يرجى اختيار ملف صوتي"); setIsExporting(false); return; }
+            finalAudioBuffer = uploadAudioBuffer;
+        } 
+        else if (state.mode === 'reciter') {
+             if (!state.selectedReciterId) { alert("القارئ غير محدد"); setIsExporting(false); return; }
+             
+             const texts = state.quranConfig.verses.map(v => v.text);
+             const result = await prepareReciterAudio(
+                 state.selectedReciterId,
+                 state.quranConfig.surahNumber,
+                 state.quranConfig.fromAyah,
+                 state.quranConfig.toAyah,
+                 texts,
+                 (msg, pct) => {
+                     setExportProgress(pct * 0.4); 
+                 }
+             );
+             finalAudioBuffer = result.masterBuffer;
+             finalTimings = result.timings; 
+        }
+
+        if (!finalAudioBuffer) throw new Error("Audio Buffer failed");
+        
+        setExportProgress(40);
+
+        // --- 2. Canvas Setup ---
         const canvas = document.createElement('canvas');
         const dimensions = getDimensions(state.resolution, state.aspectRatio);
         canvas.width = dimensions.width;
         canvas.height = dimensions.height;
-        // alpha: false improves performance
         const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true })!; 
-
-        // 2. Pre-load Assets (Robustly)
-        const assetMap = new Map<string, HTMLImageElement | HTMLVideoElement>();
         
+        // CRITICAL FIX: Paint black immediately so the stream has content
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // --- 3. Pre-load Assets ---
+        const assetMap = new Map<string, HTMLImageElement | HTMLVideoElement>();
         for (const asset of state.selectedAssets) {
             if (asset.type === 'image') {
                 const img = new Image();
@@ -51,7 +79,7 @@ export const useVideoExport = () => {
                 img.src = asset.url;
                 await new Promise((resolve) => {
                     img.onload = resolve;
-                    img.onerror = () => { console.warn("Failed image", asset.url); resolve(null); }; 
+                    img.onerror = () => resolve(null); 
                 });
                 assetMap.set(asset.id, img);
             } else {
@@ -62,26 +90,22 @@ export const useVideoExport = () => {
                 vid.playsInline = true;
                 vid.preload = "auto";
                 await new Promise((resolve) => {
-                    vid.onloadedmetadata = () => {
-                        vid.currentTime = 0;
-                        resolve(true);
-                    };
-                    vid.onerror = () => { console.warn("Failed video", asset.url); resolve(null); };
+                    vid.onloadedmetadata = () => { vid.currentTime = 0; resolve(true); };
+                    vid.onerror = () => resolve(null);
                 });
                 assetMap.set(asset.id, vid);
             }
         }
 
-        setExportProgress(10);
+        setExportProgress(45);
 
-        // 3. Audio Rendering (Offline)
-        const offlineCtx = new OfflineAudioContext(2, audioBuffer.length, audioBuffer.sampleRate);
+        // --- 4. Offline Audio Rendering (Effects) ---
+        const offlineCtx = new OfflineAudioContext(2, finalAudioBuffer.length, finalAudioBuffer.sampleRate);
         offlineCtxRef.current = offlineCtx;
 
         const source = offlineCtx.createBufferSource();
-        source.buffer = audioBuffer;
+        source.buffer = finalAudioBuffer;
         
-        // Effects
         const reverb = offlineCtx.createConvolver();
         const rate = offlineCtx.sampleRate;
         const length = rate * 2.5;
@@ -109,9 +133,10 @@ export const useVideoExport = () => {
         
         source.start(0);
         const renderedAudioBuffer = await offlineCtx.startRendering();
-        setExportProgress(20);
+        
+        setExportProgress(50);
 
-        // 4. Setup MediaRecorder
+        // --- 5. MediaRecorder Setup ---
         const audioCtx = new AudioContext();
         audioCtxRef.current = audioCtx;
         
@@ -120,107 +145,124 @@ export const useVideoExport = () => {
         sourceNode.buffer = renderedAudioBuffer;
         sourceNode.connect(dest);
         
-        // Limit FPS on mobile to prevent crashes
         const captureFps = Math.min(30, state.fps); 
         const canvasStream = canvas.captureStream(captureFps);
-        
         const combinedStream = new MediaStream([
             ...canvasStream.getVideoTracks(),
             ...dest.stream.getAudioTracks()
         ]);
 
-        // Safer MimeType Selection for Mobile
+        // DETECT SUPPORTED MIME TYPE
+        // Priority to mp4 (h264), then webm (vp9), then standard webm
         const mimeTypes = [
-            'video/mp4', // Try generic mp4 first (widely supported on modern Android)
-            'video/webm; codecs=vp9',
-            'video/webm',
+            'video/mp4', 
+            'video/webm; codecs=vp9', 
+            'video/webm', 
             'video/webm;codecs=vp8' 
         ];
-        
         let selectedMimeType = 'video/webm';
         for (const t of mimeTypes) {
-            if (MediaRecorder.isTypeSupported(t)) {
-                selectedMimeType = t;
-                break;
-            }
+            if (MediaRecorder.isTypeSupported(t)) { selectedMimeType = t; break; }
         }
+        
+        // Determine extension based on actual supported mime type, NOT user selection
+        // This prevents the "Audio File" issue where a WebM is saved as .mp4
+        const finalExtension = selectedMimeType.includes('mp4') ? 'mp4' : 'webm';
 
         const baseBitrates: Record<Resolution, number> = {
             '360p': 1_500_000, '480p': 2_500_000, '720p': 4_000_000, 
             '1080p': 6_000_000, '2K': 10_000_000, '4K': 20_000_000, '8K': 30_000_000
         };
-        // Reduce bitrate slightly for mobile stability
-        const targetBitrate = baseBitrates[state.resolution] || 5_000_000;
-
         const recorder = new MediaRecorder(combinedStream, {
             mimeType: selectedMimeType,
-            videoBitsPerSecond: targetBitrate
+            videoBitsPerSecond: baseBitrates[state.resolution] || 5_000_000
         });
         recorderRef.current = recorder;
 
         const chunks: Blob[] = [];
-        recorder.ondataavailable = (e) => { 
-            if (e.data && e.data.size > 0) chunks.push(e.data); 
-        };
+        recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
         
         recorder.onstop = () => {
             const blob = new Blob(chunks, { type: selectedMimeType });
             const url = URL.createObjectURL(blob);
             
-            // Clean up everything immediately
+            // Cleanup
             try {
                 combinedStream.getTracks().forEach(track => track.stop());
                 audioCtx.close();
                 assetMap.forEach((el) => {
-                    if (el instanceof HTMLVideoElement) {
-                        el.pause();
-                        el.removeAttribute('src');
-                        el.load();
-                    }
+                    if (el instanceof HTMLVideoElement) { el.pause(); el.removeAttribute('src'); el.load(); }
                 });
-            } catch (e) {
-                console.warn("Cleanup warning:", e);
-            }
+            } catch (e) {}
             
             setIsExporting(false);
-            onComplete(url);
+            onComplete(url, finalExtension);
         };
 
-        recorder.start(1000); // Slice chunks every second to keep memory usage smooth
+        recorder.start(1000); 
         sourceNode.start(0);
 
-        // 5. Animation Loop
+        // --- 6. Animation Loop ---
         const duration = renderedAudioBuffer.duration;
         const totalAssetDuration = Math.max(0.1, state.selectedAssets.reduce((acc, cur) => acc + cur.duration, 0));
-        
         const startTime = performance.now();
         let lastAssetId: string | null = null;
         
+        // --- UNIFIED LAYOUT ENGINE (Cached) ---
+        const calculateLayout = (context: CanvasRenderingContext2D, text: string, maxWidth: number, fontSize: number, fontName: string) => {
+            context.font = `bold ${fontSize}px ${fontName}`;
+            const words = text.split(' ');
+            const lines: { words: string[], startIndex: number }[] = [];
+            
+            let currentLineWords: string[] = [];
+            let currentLineWidth = 0;
+            let lineStartWordIndex = 0;
+
+            for (const word of words) {
+                const wordWidth = context.measureText(word + ' ').width;
+                if (currentLineWidth + wordWidth < maxWidth) {
+                    currentLineWords.push(word);
+                    currentLineWidth += wordWidth;
+                } else {
+                    lines.push({ words: currentLineWords, startIndex: lineStartWordIndex });
+                    lineStartWordIndex += currentLineWords.length;
+                    currentLineWords = [word];
+                    currentLineWidth = wordWidth;
+                }
+            }
+            if (currentLineWords.length > 0) {
+                lines.push({ words: currentLineWords, startIndex: lineStartWordIndex });
+            }
+
+            const lineHeight = fontSize * 1.8; 
+            const totalHeight = lines.length * lineHeight;
+            return { lines, lineHeight, totalHeight };
+        };
+
+        const layoutCache = new Map<string, { layout: any, fontSize: number, fontName: string }>();
+
         const draw = () => {
             const now = performance.now();
             const currentTime = (now - startTime) / 1000;
 
+            const percentComplete = 50 + ((currentTime / duration) * 50);
+            setExportProgress(Math.min(99, percentComplete));
+
             if (currentTime >= duration) {
-                 // STOP EVERYTHING
                  setExportProgress(100);
                  try { sourceNode.stop(); } catch(e) {}
-                 
-                 if (recorder.state === 'recording') {
-                     recorder.stop();
-                 }
+                 if (recorder.state === 'recording') recorder.stop();
                  cancelAnimationFrame(animationFrameRef.current);
                  return;
             }
 
-            // --- Render Logic ---
+            // Asset Logic
             const loopTime = currentTime % totalAssetDuration;
-            
             let currentAsset = null;
             let nextAsset = null;
             let accumulator = 0;
             let currentAssetStartTime = 0;
 
-            // Find assets
             for (let i = 0; i < state.selectedAssets.length; i++) {
                 const asset = state.selectedAssets[i];
                 if (loopTime >= accumulator && loopTime < (accumulator + asset.duration)) { 
@@ -234,7 +276,6 @@ export const useVideoExport = () => {
             }
             if (!currentAsset) { currentAsset = state.selectedAssets[0]; currentAssetStartTime = 0; }
 
-            // Playback Management
             if (currentAsset.id !== lastAssetId) {
                 if (lastAssetId) {
                     const prev = assetMap.get(lastAssetId);
@@ -248,11 +289,10 @@ export const useVideoExport = () => {
                 lastAssetId = currentAsset.id;
             }
 
-            // --- Draw Helper ---
+            // Draw Helper
             const drawAssetToCtx = (asset: BackgroundAsset, opacity: number, localTime: number) => {
                 const el = assetMap.get(asset.id);
                 if (!el) return;
-                
                 ctx.globalAlpha = opacity;
                 
                 if (asset.type === 'video' && el instanceof HTMLVideoElement) {
@@ -276,17 +316,15 @@ export const useVideoExport = () => {
                 ctx.globalAlpha = 1.0;
             };
 
-            // Background
+            // BG
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Asset Transition
             const assetLocalTime = loopTime - currentAssetStartTime;
             const timeRemaining = currentAsset.duration - assetLocalTime;
             const transDuration = 1.0;
 
             drawAssetToCtx(currentAsset, 1.0, assetLocalTime);
-
             if (state.globalStyle.transitionType === 'fade' && timeRemaining <= transDuration && nextAsset) {
                  const opacity = 1 - (timeRemaining / transDuration);
                  drawAssetToCtx(nextAsset, opacity, 0);
@@ -296,7 +334,7 @@ export const useVideoExport = () => {
             ctx.fillStyle = 'rgba(0,0,0,0.3)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Text
+            // TEXT
             if (!forceNoText) {
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
@@ -329,15 +367,44 @@ export const useVideoExport = () => {
                     ctx.shadowBlur = 0;
                 };
 
-                // Quran Verse
                 const qConfig = state.quranConfig;
-                if (qConfig.isEnabled && qConfig.timings.length > 0) {
-                    const activeVerse = qConfig.timings.find(t => currentTime >= t.startTime && currentTime < t.endTime);
+                if (qConfig.isEnabled && finalTimings.length > 0) {
+                    const activeVerse = finalTimings.find(t => currentTime >= t.startTime && currentTime < t.endTime);
                     if (activeVerse) {
                         const style = qConfig.style;
                         const x = (qConfig.position.x / 100) * canvas.width;
                         const y = (qConfig.position.y / 100) * canvas.height;
-                        const fontSize = 140 * style.fontSizeScale * scaleFactor;
+                        
+                        let cachedLayout = layoutCache.get(activeVerse.text);
+                        let layout, currentFontSize, fontName;
+
+                        if (cachedLayout) {
+                            layout = cachedLayout.layout;
+                            currentFontSize = cachedLayout.fontSize;
+                            fontName = cachedLayout.fontName;
+                        } else {
+                            const maxAllowedHeight = canvas.height * 0.65;
+                            const maxWidth = canvas.width * 0.85;
+                            
+                            fontName = style.font;
+                            if (fontName === 'Amiri Quran') fontName = '"Amiri Quran", serif';
+                            else if (fontName === 'Scheherazade New') fontName = '"Scheherazade New", serif';
+                            
+                            currentFontSize = 140 * style.fontSizeScale * scaleFactor;
+                            
+                            let iterations = 0;
+                            do {
+                                layout = calculateLayout(ctx, activeVerse.text, maxWidth, currentFontSize, fontName);
+                                if (layout.totalHeight > maxAllowedHeight && currentFontSize > 20) {
+                                    currentFontSize *= 0.90; 
+                                } else {
+                                    break; 
+                                }
+                                iterations++;
+                            } while (iterations < 15);
+                            
+                            layoutCache.set(activeVerse.text, { layout, fontSize: currentFontSize, fontName });
+                        }
 
                         const animType = state.globalStyle.textAnimation;
                         const timeSinceStart = currentTime - activeVerse.startTime;
@@ -359,11 +426,7 @@ export const useVideoExport = () => {
                             ctx.scale(scale, scale);
                             ctx.translate(-x, -(y + offsetY)); 
                             
-                            let fontName: string = style.font;
-                            if (fontName === 'Amiri Quran') fontName = '"Amiri Quran", serif';
-                            else if (fontName === 'Scheherazade New') fontName = '"Scheherazade New", serif';
-                            
-                            ctx.font = `bold ${fontSize}px ${fontName}`;
+                            ctx.font = `bold ${currentFontSize}px ${fontName}`;
                             if (style.hasShadow) {
                                 ctx.shadowColor = `rgba(0,0,0,${0.9 * opacity})`;
                                 ctx.shadowBlur = 4 * scaleFactor;
@@ -371,35 +434,15 @@ export const useVideoExport = () => {
                                 ctx.shadowOffsetY = 2 * scaleFactor;
                             }
 
-                            const words = activeVerse.text.split(' ');
-                            const maxWidth = canvas.width * 0.8; 
-                            const lines = [];
-                            let currentLineWords = [];
-                            let currentLineWidth = 0;
-                            let lineStartWordIndex = 0;
-
-                            for (const word of words) {
-                                const wordWidth = ctx.measureText(word + ' ').width;
-                                if (currentLineWidth + wordWidth < maxWidth) {
-                                    currentLineWords.push(word);
-                                    currentLineWidth += wordWidth;
-                                } else {
-                                    lines.push({ text: currentLineWords.join(' '), words: currentLineWords, startIndex: lineStartWordIndex });
-                                    lineStartWordIndex += currentLineWords.length;
-                                    currentLineWords = [word];
-                                    currentLineWidth = wordWidth;
-                                }
-                            }
-                            if (currentLineWords.length > 0) {
-                                lines.push({ text: currentLineWords.join(' '), words: currentLineWords, startIndex: lineStartWordIndex });
+                            let startY = y - (layout.totalHeight / 2) + (layout.lineHeight / 2);
+                            const minTopY = canvas.height * 0.15;
+                            if (startY - (layout.lineHeight/2) < minTopY) {
+                                startY = minTopY + (layout.lineHeight/2);
                             }
 
-                            const lineHeight = fontSize * 1.6;
-                            const totalHeight = lines.length * lineHeight;
-                            let startY = (y + offsetY) - (totalHeight / 2) + (lineHeight / 2);
-
-                            lines.forEach((line) => {
-                                const lineWidth = ctx.measureText(line.text).width;
+                            layout.lines.forEach((line) => {
+                                const lineText = line.words.join(' ');
+                                const lineWidth = ctx.measureText(lineText).width;
                                 let cursorX = x + (lineWidth / 2); 
 
                                 line.words.forEach((word, localIndex) => {
@@ -418,7 +461,7 @@ export const useVideoExport = () => {
                                     ctx.fillText(word + ' ', cursorX, startY);
                                     cursorX -= wWidth;
                                 });
-                                startY += lineHeight;
+                                startY += layout.lineHeight;
                             });
                             ctx.restore(); 
                         }
@@ -429,15 +472,14 @@ export const useVideoExport = () => {
                 drawText(state.readerName, state.readerPosition.x, state.readerPosition.y, state.readerStyle, 60);
             }
 
-            setExportProgress(20 + ((currentTime / duration) * 80));
             animationFrameRef.current = requestAnimationFrame(draw);
         };
 
         animationFrameRef.current = requestAnimationFrame(draw);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Video Generation Error:", error);
-        alert("حدث خطأ أثناء إنشاء الفيديو. يرجى المحاولة مرة أخرى أو تقليل الدقة.");
+        alert("حدث خطأ: " + (error.message || "Unknown error"));
         setIsExporting(false);
     }
 

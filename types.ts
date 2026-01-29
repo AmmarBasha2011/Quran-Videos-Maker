@@ -92,12 +92,15 @@ export interface QuranConfig {
   highlightColor: string;
   highlights: HighlightedWord[]; // Manual highlights (Verse Specific)
   apiKeys: string[]; // List of user keys
-  generateNoTextVariant: boolean; // NEW: Generate second video without text
+  generateNoTextVariant: boolean;
 }
+
+export type AppMode = 'upload' | 'reciter';
 
 export interface AppState {
   step: number;
-  
+  mode: AppMode; // NEW: Track current mode
+
   // Video Configuration
   aspectRatio: AspectRatio;
 
@@ -105,6 +108,9 @@ export interface AppState {
   readerName: string;
   surahName: string;
   
+  // Reciter Mode Specifics
+  selectedReciterId: string | null;
+
   // Quran Text & Sync
   quranConfig: QuranConfig;
 

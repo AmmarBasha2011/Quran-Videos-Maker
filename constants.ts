@@ -2,16 +2,44 @@
 import { AudioPreset, Resolution, FontType, AspectRatio } from './types';
 import { Youtube, Instagram, Facebook, Smartphone } from 'lucide-react';
 
-export const STEPS = [
-  { id: 1, label: 'الإعدادات' },
-  { id: 2, label: 'الخلفية' },
-  { id: 3, label: 'الصوت' },
-  { id: 4, label: 'الآيات' }, 
-  { id: 5, label: 'الشكل العام' }, // NEW STEP
-  { id: 6, label: 'التنسيق' }, // Was Style
-  { id: 7, label: 'الجودة' },
-  { id: 8, label: 'التصدير' },
+// Separate steps for each mode
+export const UPLOAD_MODE_STEPS = [
+  { id: 1, label: 'الوضع' },
+  { id: 2, label: 'الإعدادات' },
+  { id: 3, label: 'الخلفية' },
+  { id: 4, label: 'الصوت' },
+  { id: 5, label: 'الآيات' }, 
+  { id: 6, label: 'الشكل العام' },
+  { id: 7, label: 'التنسيق' },
+  { id: 8, label: 'الجودة' },
+  { id: 9, label: 'التصدير' },
 ];
+
+export const RECITER_MODE_STEPS = [
+  { id: 1, label: 'الوضع' },
+  { id: 2, label: 'إعداد القارئ' }, // Replaces Details
+  { id: 3, label: 'الخلفية' },
+  // Audio Step skipped
+  // Verses Step skipped (auto-handled)
+  { id: 6, label: 'الشكل العام' },
+  { id: 7, label: 'التنسيق' },
+  { id: 8, label: 'الجودة' },
+  { id: 9, label: 'التصدير' },
+];
+
+export const RECITERS_MAP: Record<string, string> = {
+    'الشيخ مشاري العفاسي': 'Alafasy_64kbps',
+    'الشيخ عبدالباسط عبدالصمد': 'AbdulSamad_64kbps_QuranExplorer.Com',
+    'الشيخ عبدالباسط عبدالصمد (مرتل)': 'Abdul_Basit_Murattal_64kbps',
+    'الشيخ عبدالرحمن السديس': 'Abdurrahmaan_As-Sudais_64kbps',
+    'الشيخ ماهر المعيقلي': 'Maher_AlMuaiqly_64kbps',
+    'الشيخ محمد صديق المنشاوي (مجود)': 'Minshawy_Mujawwad_64kbps',
+    'الشيخ سعود الشريم': 'Saood_ash-Shuraym_64kbps',
+    'الشيخ محمود خليل الحصري': 'Husary_64kbps',
+    'الشيخ عبدالله الحذيفي': 'Hudhaify_64kbps',
+    'الشيخ أبو بكر الشاطري': 'Abu_Bakr_Ash-Shaatree_128kbps',
+    'الشيخ محمود علي البنا': 'mahmoud_ali_al_banna_32kbps'
+};
 
 export const AUDIO_PRESETS: AudioPreset[] = [
   { id: 'custom', name: 'مخصص', reverb: 0, echo: 0, normalize: false },
