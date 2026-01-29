@@ -8,37 +8,38 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onToggleHistory, onToggleDocs }) => (
-  <header className="p-4 md:p-6 border-b border-slate-800/50 bg-[#020617]/90 backdrop-blur sticky top-0 z-50">
-    <div className="max-w-5xl mx-auto flex items-center justify-between">
+  <header className="p-3 md:p-5 border-b border-white/10 bg-white/5 backdrop-blur-2xl z-[60] relative">
+    <div className="max-w-7xl mx-auto flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-900 to-slate-900 flex items-center justify-center border border-emerald-800/30 shadow-lg shadow-emerald-900/20">
-          <Music className="text-emerald-400" />
+        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 shadow-xl overflow-hidden relative group">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <Music className="text-white relative z-10" size={20} />
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-lg md:text-xl font-bold font-rakkas tracking-wide text-transparent bg-clip-text bg-gradient-to-l from-emerald-100 to-emerald-400">
+            <h1 className="text-lg md:text-xl font-bold font-rakkas tracking-wide iridescent-text">
               صانع فيديوهات القرآن
             </h1>
-            <span className="bg-emerald-500/20 text-emerald-400 text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/30 font-bold">V3.0</span>
+            <span className="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full border border-white/20 font-bold backdrop-blur-sm">V3.0</span>
           </div>
-          <p className="text-[10px] md:text-xs text-slate-500 uppercase tracking-widest font-mono">Video Studio</p>
+          <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-mono font-medium">Liquid Studio</p>
         </div>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3">
          <button 
            onClick={onToggleDocs}
-           className="text-xs flex items-center gap-1 text-slate-400 hover:text-emerald-400 transition-colors bg-slate-900/50 p-2 rounded-lg border border-slate-800"
+           className="p-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white transition-all flex items-center gap-2 group"
            title="التوثيق والشرح"
          >
-           <BookOpenText size={16} />
-           <span className="hidden md:inline">الشرح</span>
+           <BookOpenText size={18} className="group-hover:scale-110 transition-transform" />
+           <span className="hidden md:inline font-bold text-xs">الشرح</span>
          </button>
          <button 
            onClick={onToggleHistory}
-           className="text-xs flex items-center gap-1 text-slate-400 hover:text-emerald-400 transition-colors bg-slate-900/50 p-2 rounded-lg border border-slate-800"
+           className="p-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white transition-all flex items-center gap-2 group"
          >
-           <History size={16} />
-           <span className="hidden md:inline">السجل</span>
+           <History size={18} className="group-hover:scale-110 transition-transform" />
+           <span className="hidden md:inline font-bold text-xs">السجل</span>
          </button>
       </div>
     </div>

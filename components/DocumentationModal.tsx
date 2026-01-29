@@ -144,83 +144,98 @@ export const DocumentationModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const currentContent = DOC_SECTIONS.find(s => s.id === activeSection);
 
   return (
-    <div className="fixed inset-0 z-[100] flex bg-[#020617]">
+    <div className="fixed inset-0 z-[100] flex flex-col md:flex-row bg-[#020617]/40 backdrop-blur-3xl animate-in fade-in duration-500">
       
       {/* Sidebar (Desktop) */}
-      <div className="w-64 bg-slate-950 border-l border-slate-800 hidden md:flex flex-col">
-        <div className="p-6 border-b border-slate-800">
-             <h2 className="text-xl font-bold font-rakkas text-emerald-400">مركز المساعدة</h2>
-             <p className="text-xs text-slate-500 mt-1">الدليل الشامل V3.0</p>
+      <div className="w-72 bg-white/5 border-l border-white/10 hidden md:flex flex-col relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent"></div>
+        <div className="p-8 border-b border-white/10 relative z-10">
+             <h2 className="text-2xl font-black font-rakkas iridescent-text">مركز المساعدة</h2>
+             <p className="text-[10px] text-slate-400 mt-2 font-mono tracking-widest uppercase">Documentation V3.0</p>
         </div>
-        <div className="flex-1 overflow-y-auto py-4">
+        <div className="flex-1 overflow-y-auto py-6 relative z-10 custom-scrollbar">
             {DOC_SECTIONS.map((section) => (
                 <button
                     key={section.id}
                     onClick={() => setActiveSection(section.id)}
-                    className={`w-full text-right px-6 py-3 flex items-center gap-3 transition-all ${activeSection === section.id ? 'bg-emerald-900/20 text-emerald-400 border-r-2 border-emerald-500' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'}`}
+                    className={`w-full text-right px-8 py-4 flex items-center gap-4 transition-all relative group ${activeSection === section.id ? 'text-white' : 'text-slate-400 hover:text-slate-200'}`}
                 >
-                    <section.icon size={18} />
-                    <span className="font-bold text-sm">{section.title}</span>
+                    {activeSection === section.id && (
+                        <div className="absolute inset-y-0 right-0 w-1 bg-white shadow-[0_0_15px_white]"></div>
+                    )}
+                    <div className={`p-2 rounded-lg transition-all ${activeSection === section.id ? 'bg-white/20 shadow-lg' : 'bg-transparent group-hover:bg-white/5'}`}>
+                        <section.icon size={20} />
+                    </div>
+                    <span className="font-bold text-sm tracking-tight">{section.title}</span>
                 </button>
             ))}
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         {/* Mobile Header */}
-        <div className="md:hidden p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
-            <h2 className="font-bold text-emerald-400">مركز المساعدة</h2>
-            <button onClick={onClose}><X className="text-slate-400" /></button>
+        <div className="md:hidden p-5 border-b border-white/10 flex justify-between items-center bg-white/5 backdrop-blur-xl">
+            <h2 className="font-black iridescent-text text-lg">مركز المساعدة</h2>
+            <button
+                onClick={onClose}
+                className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 shadow-lg active:scale-90 transition-all"
+            >
+                <X className="text-white" size={20} />
+            </button>
         </div>
 
         {/* Desktop Header / Close Button */}
-        <div className="hidden md:flex justify-end p-4">
+        <div className="hidden md:flex justify-end p-6">
             <button 
                 onClick={onClose}
-                className="flex items-center gap-2 text-slate-400 hover:text-white bg-slate-900 px-4 py-2 rounded-full transition-colors"
+                className="liquid-button shiny-reflection flex items-center gap-2 text-white px-6 py-2.5 rounded-2xl transition-all hover:scale-105 active:scale-95 font-bold text-sm"
             >
                 <X size={18} /> إغلاق الدليل
             </button>
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-12 max-w-4xl mx-auto w-full custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-5 md:p-16 max-w-5xl mx-auto w-full custom-scrollbar pb-32 md:pb-16">
             {/* Mobile Nav (Horizontal) */}
-            <div className="md:hidden flex overflow-x-auto gap-2 mb-6 pb-2 custom-scrollbar">
+            <div className="md:hidden flex overflow-x-auto gap-3 mb-8 pb-3 no-scrollbar">
                  {DOC_SECTIONS.map((section) => (
                     <button
                         key={section.id}
                         onClick={() => setActiveSection(section.id)}
-                        className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold border transition-all ${activeSection === section.id ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-400'}`}
+                        className={`flex-shrink-0 px-5 py-2.5 rounded-2xl text-xs font-black border transition-all ${activeSection === section.id ? 'bg-white/20 border-white/40 text-white shadow-lg' : 'bg-white/5 border-white/5 text-slate-400'}`}
                     >
                         {section.title}
                     </button>
                 ))}
             </div>
 
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="flex items-center gap-4 mb-6 border-b border-slate-800 pb-4">
-                    <div className="w-12 h-12 rounded-xl bg-emerald-900/30 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
-                        {currentContent && React.createElement(currentContent.icon, { size: 24 })}
+            <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
+                <div className="flex items-center gap-6 mb-10 border-b border-white/10 pb-8">
+                    <div className="w-16 h-16 rounded-3xl bg-white/10 flex items-center justify-center text-white border border-white/20 shadow-2xl relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-blue-500/20"></div>
+                        {currentContent && React.createElement(currentContent.icon, { size: 32, className: "relative z-10 group-hover:scale-110 transition-transform duration-500" })}
                     </div>
-                    <h1 className="text-3xl font-bold text-white font-rakkas">{currentContent?.title}</h1>
+                    <div>
+                        <h1 className="text-4xl md:text-5xl font-black text-white font-rakkas tracking-tight">{currentContent?.title}</h1>
+                        <p className="text-slate-400 text-sm mt-2 font-medium">قسم المساعدة والاستخدام</p>
+                    </div>
                 </div>
                 
-                <div className="prose prose-invert prose-lg max-w-none leading-relaxed">
+                <div className="prose prose-invert prose-lg max-w-none leading-relaxed prose-headings:text-white prose-p:text-slate-300 prose-strong:text-white prose-li:text-slate-300">
                     {currentContent?.content}
                 </div>
             </div>
 
-            {/* Navigation Footer */}
-            <div className="mt-12 pt-6 border-t border-slate-800 flex justify-between">
+            {/* Navigation Footer (Desktop Hidden) */}
+            <div className="md:hidden mt-12 pt-8 border-t border-white/10 flex justify-between items-center">
                 <button 
                     onClick={() => {
                         const idx = DOC_SECTIONS.findIndex(s => s.id === activeSection);
                         if (idx > 0) setActiveSection(DOC_SECTIONS[idx - 1].id);
                     }}
                     disabled={activeSection === DOC_SECTIONS[0].id}
-                    className="text-slate-500 hover:text-white disabled:opacity-0 transition-colors"
+                    className="text-slate-400 font-bold hover:text-white disabled:opacity-0 transition-all px-4 py-2"
                 >
                      السابق
                 </button>
@@ -230,7 +245,7 @@ export const DocumentationModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         if (idx < DOC_SECTIONS.length - 1) setActiveSection(DOC_SECTIONS[idx + 1].id);
                         else onClose();
                     }}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg font-bold transition-colors"
+                    className="liquid-button shiny-reflection px-8 py-3 rounded-2xl font-black text-white shadow-xl"
                 >
                     {activeSection === DOC_SECTIONS[DOC_SECTIONS.length - 1].id ? 'إنهاء' : 'التالي'}
                 </button>

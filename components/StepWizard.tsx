@@ -7,22 +7,28 @@ interface StepWizardProps {
 }
 
 export const StepWizard: React.FC<StepWizardProps> = ({ currentStep }) => (
-  <div className="flex justify-between items-center mb-8 px-2 md:px-4 max-w-2xl mx-auto overflow-x-auto pb-4 md:pb-0">
+  <div className="flex justify-between items-center px-1 md:px-4 max-w-3xl mx-auto overflow-x-auto pb-2 custom-scrollbar no-scrollbar">
     {STEPS.map((step) => {
       const isActive = currentStep === step.id;
       const isDone = currentStep > step.id;
       return (
-        <div key={step.id} className="flex flex-col items-center z-10 min-w-[70px]">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 border-2 
-            ${isActive ? 'bg-emerald-600 border-emerald-400 text-white scale-110' : 
-              isDone ? 'bg-emerald-900 border-emerald-800 text-emerald-400' : 
-              'bg-slate-900 border-slate-700 text-slate-500'}`}>
-            {isDone ? <CheckCircle size={16} /> : step.id}
+        <div key={step.id} className="flex flex-col items-center z-10 min-w-[65px] flex-shrink-0 transition-all duration-500">
+          <div className={`w-9 h-9 rounded-2xl flex items-center justify-center transition-all duration-500 border relative overflow-hidden
+            ${isActive ? 'bg-white/20 border-white/40 shadow-[0_0_20px_rgba(255,255,255,0.2)] scale-110' :
+              isDone ? 'bg-purple-500/20 border-purple-400/30 text-purple-200' :
+              'bg-white/5 border-white/5 text-slate-500 opacity-60'}`}>
+
+            {isActive && <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent animate-pulse"></div>}
+
+            <span className={`relative z-10 text-xs font-black ${isActive ? 'text-white' : ''}`}>
+                {isDone ? <CheckCircle size={18} strokeWidth={3} /> : step.id}
+            </span>
           </div>
-          <span className={`text-xs mt-2 font-medium ${isActive ? 'text-emerald-400' : 'text-slate-500'}`}>{step.label}</span>
+          <span className={`text-[10px] mt-2 font-bold transition-all duration-300 uppercase tracking-tighter ${isActive ? 'text-white' : 'text-slate-500'}`}>
+            {step.label}
+          </span>
         </div>
       )
     })}
-    <div className="hidden md:block absolute top-[88px] right-0 w-full h-0.5 bg-slate-800 -z-0" /> 
   </div>
 );

@@ -63,57 +63,57 @@ export const BackgroundStep: React.FC<Props> = ({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col h-full min-h-[600px]">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 flex flex-col h-full min-h-[600px]">
       
       {/* --- HEADER & TABS --- */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-900/50 p-2 rounded-xl">
-        <h2 className="text-xl font-bold font-rakkas px-2">مكتبة الخلفيات</h2>
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white/5 p-2 rounded-2xl border border-white/10 backdrop-blur-md">
+        <h2 className="text-xl font-black font-rakkas px-3 text-white">مكتبة الخلفيات</h2>
         
-        <div className="flex bg-slate-950 p-1 rounded-lg">
+        <div className="flex bg-black/20 p-1.5 rounded-xl border border-white/5 shadow-inner">
             <button 
                 onClick={() => setActiveTab('images')}
-                className={`px-4 py-1.5 rounded-md text-sm font-bold flex items-center gap-2 transition-all ${activeTab === 'images' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                className={`px-6 py-2 rounded-lg text-xs font-black flex items-center gap-2 transition-all duration-300 ${activeTab === 'images' ? 'bg-white text-black shadow-lg scale-105' : 'text-slate-400 hover:text-slate-200'}`}
             >
-                <ImageIcon size={16} /> صور
+                <ImageIcon size={16} strokeWidth={2.5} /> صور
             </button>
             <button 
                 onClick={() => setActiveTab('videos')}
-                className={`px-4 py-1.5 rounded-md text-sm font-bold flex items-center gap-2 transition-all ${activeTab === 'videos' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                className={`px-6 py-2 rounded-lg text-xs font-black flex items-center gap-2 transition-all duration-300 ${activeTab === 'videos' ? 'bg-white text-black shadow-lg scale-105' : 'text-slate-400 hover:text-slate-200'}`}
             >
-                <Video size={16} /> فيديو
+                <Video size={16} strokeWidth={2.5} /> فيديو
             </button>
         </div>
       </div>
 
       {/* --- LIBRARY GRID --- */}
-      <div className="flex-1 overflow-y-auto max-h-[400px] min-h-[300px] custom-scrollbar bg-slate-950/30 rounded-xl border border-slate-800 p-4 relative">
+      <div className="flex-1 overflow-y-auto max-h-[450px] min-h-[350px] custom-scrollbar bg-black/20 rounded-[1.5rem] border border-white/5 p-5 relative shadow-inner">
         
         {/* IMAGES TAB */}
         {activeTab === 'images' && (
-             <div className="space-y-6 animate-in fade-in duration-300">
+             <div className="space-y-8 animate-in fade-in duration-500">
                 <div className="flex items-center justify-between mb-4">
-                     <span className="text-xs font-bold text-slate-400">Pexels Gallery (50+ Images)</span>
-                     <label className="cursor-pointer bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded text-xs flex items-center gap-2 transition-colors border border-slate-700">
-                        <Upload size={14} /> رفع صورة
+                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pexels Gallery</span>
+                     <label className="cursor-pointer liquid-button shiny-reflection text-white px-4 py-2 rounded-xl text-xs flex items-center gap-2 font-bold transition-all hover:scale-105">
+                        <Upload size={14} strokeWidth={2.5} /> رفع صورة
                         <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, 'image')} />
                      </label>
                 </div>
                 
-                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     {images.map((img) => (
                         <div 
                             key={img.id} 
                             onClick={() => addAsset('image', img.urls.regular, img.urls.small)}
-                            className="aspect-[16/9] relative group cursor-pointer rounded-lg overflow-hidden border border-slate-800 hover:border-emerald-500 transition-all"
+                            className="aspect-[16/9] relative group cursor-pointer rounded-2xl overflow-hidden border border-white/5 hover:border-white/40 transition-all shadow-lg"
                         >
                             <img 
                                 src={img.urls.small} 
-                                className="w-full h-full object-cover transition-transform group-hover:scale-110" 
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-125"
                                 loading="lazy" 
                                 alt="background"
                             />
-                            <div className="absolute inset-0 bg-emerald-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                <Plus className="text-white" size={24} />
+                            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity backdrop-blur-[2px]">
+                                <Plus className="text-white drop-shadow-lg" size={32} strokeWidth={3} />
                             </div>
                         </div>
                     ))}
@@ -122,9 +122,9 @@ export const BackgroundStep: React.FC<Props> = ({
                 <button 
                     onClick={onRefresh} 
                     disabled={loading}
-                    className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg flex items-center justify-center gap-2 text-sm transition-colors mt-4"
+                    className="w-full py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-2xl flex items-center justify-center gap-3 text-sm font-black transition-all mt-6 shadow-xl active:scale-95"
                 >
-                    {loading ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
+                    {loading ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />}
                     تحديث القائمة (بحث جديد)
                 </button>
             </div>
@@ -132,16 +132,16 @@ export const BackgroundStep: React.FC<Props> = ({
 
         {/* VIDEOS TAB (UNAVAILABLE) */}
         {activeTab === 'videos' && (
-             <div className="flex flex-col items-center justify-center h-[300px] animate-in fade-in">
-                 <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mb-4 border border-slate-800">
-                     <AlertCircle className="text-slate-500" size={32} />
+             <div className="flex flex-col items-center justify-center h-[300px] animate-in fade-in zoom-in-95">
+                 <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mb-6 border border-white/10 shadow-2xl">
+                     <AlertCircle className="text-white/40" size={40} />
                  </div>
-                 <h3 className="text-lg font-bold text-slate-300">قسم الفيديو غير متاح حالياً</h3>
-                 <p className="text-sm text-slate-500 mt-2 max-w-xs text-center">
+                 <h3 className="text-xl font-black text-white">قسم الفيديو غير متاح حالياً</h3>
+                 <p className="text-sm text-slate-500 mt-2 max-w-xs text-center font-medium">
                      نعمل على تحسين خوادم الفيديو. يرجى استخدام الصور أو رفع فيديو خاص بك.
                  </p>
-                 <label className="mt-6 cursor-pointer bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-colors shadow-lg">
-                    <Upload size={16} /> رفع فيديو من جهازي
+                 <label className="mt-8 cursor-pointer liquid-button shiny-reflection text-white px-8 py-3 rounded-2xl text-sm font-black flex items-center gap-2 transition-all hover:scale-105 shadow-2xl">
+                    <Upload size={18} strokeWidth={2.5} /> رفع فيديو من جهازي
                     <input type="file" accept="video/*" className="hidden" onChange={(e) => handleFileUpload(e, 'video')} />
                  </label>
             </div>
@@ -150,53 +150,55 @@ export const BackgroundStep: React.FC<Props> = ({
       </div>
 
       {/* --- TIMELINE SECTION --- */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3">
-        <div className="flex justify-between items-center text-xs text-slate-400">
-            <span>شريط الأحداث (Timeline) - {selectedAssets.length} عناصر</span>
-            <span>المدة التقريبية: {selectedAssets.reduce((acc, curr) => acc + curr.duration, 0)} ثانية</span>
+      <div className="bg-white/5 border border-white/10 rounded-[1.5rem] p-5 flex flex-col gap-4 backdrop-blur-md shadow-2xl relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
+        <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-wider relative z-10">
+            <span className="bg-white/10 px-2 py-1 rounded-md">Timeline ({selectedAssets.length})</span>
+            <span className="bg-purple-500/20 text-purple-200 px-2 py-1 rounded-md">Total: {selectedAssets.reduce((acc, curr) => acc + curr.duration, 0)}s</span>
         </div>
         
         {selectedAssets.length === 0 ? (
-            <div className="h-24 border-2 border-dashed border-slate-800 rounded-lg flex items-center justify-center text-slate-600 text-sm">
-                اختر صوراً من المكتبة أعلاه
+            <div className="h-28 border-2 border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center text-slate-600 text-sm gap-2 relative z-10">
+                <ImageIcon size={24} className="opacity-20" />
+                <span className="font-bold">اختر صوراً من المكتبة أعلاه</span>
             </div>
         ) : (
-            <div className="flex gap-3 overflow-x-auto pb-2 pt-2 custom-scrollbar items-end">
+            <div className="flex gap-4 overflow-x-auto pb-4 pt-2 custom-scrollbar items-end relative z-10 no-scrollbar">
                 {selectedAssets.map((asset, idx) => (
-                    <div key={asset.id} className="flex-shrink-0 w-32 bg-slate-950 rounded-lg border border-slate-700 overflow-hidden group relative flex flex-col">
-                        <div className="h-16 relative bg-black">
+                    <div key={asset.id} className="flex-shrink-0 w-36 bg-black/40 rounded-[1.2rem] border border-white/10 overflow-hidden group relative flex flex-col shadow-2xl transition-all hover:border-white/30">
+                        <div className="h-20 relative bg-black">
                             {asset.type === 'video' ? (
                                 <video src={asset.url} className="w-full h-full object-cover opacity-80" />
                             ) : (
                                 <img src={asset.thumbnail} className="w-full h-full object-cover" />
                             )}
                             
-                            <div className="absolute top-1 right-1 bg-black/50 p-0.5 rounded">
-                                {asset.type === 'video' ? <Video size={10} className="text-white"/> : <ImageIcon size={10} className="text-white"/>}
+                            <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md p-1 rounded-lg">
+                                {asset.type === 'video' ? <Video size={12} className="text-white"/> : <ImageIcon size={12} className="text-white"/>}
                             </div>
 
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-20">
-                                <button onClick={() => moveAsset(idx, 'right')} className="p-1 hover:text-emerald-400 text-slate-300"><ArrowRight size={14}/></button>
-                                <button onClick={() => removeAsset(asset.id)} className="p-1 hover:text-red-400 text-slate-300"><Trash2 size={14}/></button>
-                                <button onClick={() => moveAsset(idx, 'left')} className="p-1 hover:text-emerald-400 text-slate-300"><ArrowLeft size={14}/></button>
+                            <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-3 z-20">
+                                <button onClick={() => moveAsset(idx, 'right')} className="p-1.5 bg-white/10 rounded-lg hover:bg-white/20 text-white"><ArrowRight size={16}/></button>
+                                <button onClick={() => removeAsset(asset.id)} className="p-1.5 bg-red-500/20 rounded-lg hover:bg-red-500/40 text-red-200"><Trash2 size={16}/></button>
+                                <button onClick={() => moveAsset(idx, 'left')} className="p-1.5 bg-white/10 rounded-lg hover:bg-white/20 text-white"><ArrowLeft size={16}/></button>
                             </div>
                             
-                            <div className="absolute top-1 left-1 bg-black/50 px-1.5 rounded text-[10px] text-white">
+                            <div className="absolute top-2 left-2 bg-white text-black font-black px-2 py-0.5 rounded-lg text-[10px] shadow-lg">
                                 {idx + 1}
                             </div>
                         </div>
 
-                        <div className="p-2 flex items-center gap-1 border-t border-slate-800 bg-slate-900">
-                             <Clock size={10} className="text-slate-500" />
+                        <div className="p-2.5 flex items-center gap-2 border-t border-white/5 bg-white/5">
+                             <Clock size={12} className="text-slate-500" />
                              <input 
                                 type="number" 
                                 min="1" 
                                 max="300"
                                 value={asset.duration}
                                 onChange={(e) => updateDuration(asset.id, parseInt(e.target.value))}
-                                className="w-full bg-transparent text-xs text-center text-emerald-400 outline-none border-b border-transparent focus:border-emerald-500"
+                                className="w-full bg-black/20 rounded-md py-1 text-xs font-black text-center text-white outline-none border border-white/5 focus:border-white/20 transition-all"
                              />
-                             <span className="text-[10px] text-slate-500">ث</span>
+                             <span className="text-[10px] font-black text-slate-500">s</span>
                         </div>
                     </div>
                 ))}

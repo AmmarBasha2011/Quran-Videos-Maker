@@ -32,29 +32,30 @@ export const GlobalStyleStep: React.FC<Props> = ({ state, updateState }) => {
   };
 
   return (
-    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-10 animate-in slide-in-from-bottom-8 duration-700">
       <div className="text-center md:text-right">
-        <h2 className="text-2xl font-bold font-rakkas text-emerald-100">الشكل العام</h2>
-        <p className="text-slate-400 text-sm">تحكم في الانتقالات، حركة النصوص، والتلوين التلقائي.</p>
+        <h2 className="text-3xl font-black font-rakkas text-white">إعدادات النمط</h2>
+        <p className="text-slate-500 text-sm mt-1">تحكم في الانتقالات، حركة النصوص، والتلوين التلقائي.</p>
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-8">
         
         {/* 1. Transitions */}
-        <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
-            <label className="text-base font-bold text-emerald-400 mb-4 flex items-center gap-2">
-                <Layers size={20} /> انتقالات الخلفية
+        <div className="bg-white/5 p-8 rounded-[2rem] border border-white/10 backdrop-blur-md shadow-2xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent"></div>
+            <label className="text-xs font-black text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-3 relative z-10">
+                <Layers size={20} className="text-white" strokeWidth={2.5} /> انتقالات الخلفية
             </label>
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-4 relative z-10">
                 <button 
                     onClick={() => updateGlobalStyle({ transitionType: 'fade' })}
-                    className={`flex-1 p-4 rounded-xl border text-sm font-bold transition-all active:scale-95 ${globalStyle.transitionType === 'fade' ? 'bg-emerald-900/40 border-emerald-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
+                    className={`flex-1 p-5 rounded-2xl border text-sm font-black transition-all duration-300 ${globalStyle.transitionType === 'fade' ? 'bg-white text-black border-white shadow-2xl scale-105' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'}`}
                 >
                     تلاشي (Cross Fade)
                 </button>
                 <button 
                     onClick={() => updateGlobalStyle({ transitionType: 'cut' })}
-                    className={`flex-1 p-4 rounded-xl border text-sm font-bold transition-all active:scale-95 ${globalStyle.transitionType === 'cut' ? 'bg-emerald-900/40 border-emerald-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
+                    className={`flex-1 p-5 rounded-2xl border text-sm font-black transition-all duration-300 ${globalStyle.transitionType === 'cut' ? 'bg-white text-black border-white shadow-2xl scale-105' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'}`}
                 >
                     قطع مباشر (Cut)
                 </button>
@@ -62,92 +63,83 @@ export const GlobalStyleStep: React.FC<Props> = ({ state, updateState }) => {
         </div>
 
         {/* 2. Text Animation */}
-        <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
-            <label className="text-base font-bold text-emerald-400 mb-4 flex items-center gap-2">
-                <MoveUp size={20} /> حركة ظهور الآيات
+        <div className="bg-white/5 p-8 rounded-[2rem] border border-white/10 backdrop-blur-md shadow-2xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent"></div>
+            <label className="text-xs font-black text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-3 relative z-10">
+                <MoveUp size={20} className="text-white" strokeWidth={2.5} /> حركة ظهور الآيات
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button 
-                    onClick={() => updateGlobalStyle({ textAnimation: 'fade' })}
-                    className={`p-4 rounded-xl border text-sm font-bold transition-all active:scale-95 ${globalStyle.textAnimation === 'fade' ? 'bg-emerald-900/40 border-emerald-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
-                >
-                    ظهور تدريجي (Fade In)
-                </button>
-                <button 
-                    onClick={() => updateGlobalStyle({ textAnimation: 'slideUp' })}
-                    className={`p-4 rounded-xl border text-sm font-bold transition-all active:scale-95 ${globalStyle.textAnimation === 'slideUp' ? 'bg-emerald-900/40 border-emerald-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
-                >
-                    صعود للأعلى (Slide Up)
-                </button>
-                <button 
-                    onClick={() => updateGlobalStyle({ textAnimation: 'scale' })}
-                    className={`p-4 rounded-xl border text-sm font-bold transition-all active:scale-95 ${globalStyle.textAnimation === 'scale' ? 'bg-emerald-900/40 border-emerald-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
-                >
-                    تكبير (Scale Up)
-                </button>
-                <button 
-                    onClick={() => updateGlobalStyle({ textAnimation: 'none' })}
-                    className={`p-4 rounded-xl border text-sm font-bold transition-all active:scale-95 ${globalStyle.textAnimation === 'none' ? 'bg-emerald-900/40 border-emerald-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
-                >
-                    ثابت (None)
-                </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
+                {[
+                    { id: 'fade', label: 'ظهور تدريجي (Fade In)' },
+                    { id: 'slideUp', label: 'صعود للأعلى (Slide Up)' },
+                    { id: 'scale', label: 'تكبير (Scale Up)' },
+                    { id: 'none', label: 'ثابت (None)' }
+                ].map(anim => (
+                    <button
+                        key={anim.id}
+                        onClick={() => updateGlobalStyle({ textAnimation: anim.id as any })}
+                        className={`p-5 rounded-2xl border text-sm font-black transition-all duration-300 ${globalStyle.textAnimation === anim.id ? 'bg-white text-black border-white shadow-2xl scale-105' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'}`}
+                    >
+                        {anim.label}
+                    </button>
+                ))}
             </div>
         </div>
 
         {/* 3. Auto Highlighting */}
-        <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 flex flex-col">
-            <label className="text-base font-bold text-emerald-400 mb-2 flex items-center gap-2">
-                <Wand2 size={20} /> التلوين التلقائي للكلمات
+        <div className="bg-white/5 p-8 rounded-[2rem] border border-white/10 backdrop-blur-md shadow-2xl relative overflow-hidden flex flex-col">
+            <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-transparent"></div>
+            <label className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-3 relative z-10">
+                <Wand2 size={20} className="text-white" strokeWidth={2.5} /> التلوين التلقائي للكلمات
             </label>
-            <p className="text-xs text-slate-500 mb-4">
-                أضف كلمات محددة ليتم تلوينها تلقائياً عند ظهورها في أي آية (مثلاً: الله، الجنة، نور).
+            <p className="text-[10px] font-bold text-slate-500 mb-6 relative z-10 uppercase tracking-wide">
+                أضف كلمات محددة ليتم تلوينها تلقائياً عند ظهورها (مثلاً: الله، الجنة).
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6 relative z-10">
                 <input 
                     type="text" 
                     placeholder="الكلمة (مثلاً: الله)" 
                     value={highlightWord}
                     onChange={(e) => setHighlightWord(e.target.value)}
-                    className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm text-white outline-none focus:border-emerald-500"
+                    className="flex-1 bg-black/40 border border-white/10 rounded-2xl p-4 text-white font-bold outline-none focus:border-white/30 transition-all shadow-inner"
                 />
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                     <input 
                         type="color" 
                         value={highlightColor}
                         onChange={(e) => setHighlightColor(e.target.value)}
-                        className="w-12 h-12 rounded cursor-pointer bg-slate-900 border border-slate-700 p-1"
+                        className="w-14 h-14 rounded-2xl cursor-pointer bg-black/40 border border-white/10 p-2 shadow-inner"
                     />
                     <button 
                         onClick={addHighlight}
-                        className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white px-6 rounded-lg transition-colors flex items-center justify-center"
+                        className="liquid-button shiny-reflection flex-1 sm:flex-none text-white px-8 rounded-2xl transition-all font-black flex items-center justify-center shadow-xl active:scale-90"
                     >
-                        <Plus size={24} />
+                        <Plus size={24} strokeWidth={3} />
                     </button>
                 </div>
             </div>
 
-            <div className="bg-slate-900/50 rounded-xl p-3 border border-slate-800 min-h-[100px] max-h-[200px] overflow-y-auto custom-scrollbar space-y-2">
+            <div className="bg-black/20 rounded-2xl p-4 border border-white/5 min-h-[120px] max-h-[200px] overflow-y-auto no-scrollbar space-y-3 relative z-10 shadow-inner">
                 {globalStyle.autoHighlights.length === 0 ? (
-                    <div className="text-center py-8 text-slate-600 text-sm">
+                    <div className="text-center py-10 text-slate-700 font-black text-xs uppercase tracking-widest opacity-30">
                         لا توجد كلمات مضافة
                     </div>
                 ) : (
                     globalStyle.autoHighlights.map((h, i) => (
-                        <div key={i} className="flex items-center justify-between bg-slate-950 p-3 rounded-lg border border-slate-800">
-                            <div className="flex items-center gap-3">
-                                <span className="w-5 h-5 rounded-full border border-white/10" style={{ backgroundColor: h.color }}></span>
-                                <span className="text-emerald-100 font-bold text-lg">{h.word}</span>
+                        <div key={i} className="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/5 backdrop-blur-sm group hover:border-white/20 transition-all">
+                            <div className="flex items-center gap-4">
+                                <span className="w-6 h-6 rounded-lg border border-white/20 shadow-lg" style={{ backgroundColor: h.color }}></span>
+                                <span className="text-white font-black text-xl font-rakkas tracking-tight">{h.word}</span>
                             </div>
-                            <button onClick={() => removeHighlight(i)} className="text-slate-500 hover:text-red-400 p-2">
-                                <Trash2 size={18} />
+                            <button onClick={() => removeHighlight(i)} className="text-slate-500 hover:text-red-400 p-2 transition-all active:scale-90">
+                                <Trash2 size={20} />
                             </button>
                         </div>
                     ))
                 )}
             </div>
         </div>
-
       </div>
     </div>
   );

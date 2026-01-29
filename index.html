@@ -3,7 +3,7 @@
 <html lang="ar" dir="rtl" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>صانع فيديوهات القرآن</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,6 +23,23 @@
               emerald: {
                 950: '#022c22',
               }
+            },
+            animation: {
+              'blob': 'blob 7s infinite',
+              'liquid': 'liquid 10s ease infinite',
+              'spin-slow': 'spin 12s linear infinite',
+            },
+            keyframes: {
+              blob: {
+                '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                '100%': { transform: 'translate(0px, 0px) scale(1)' },
+              },
+              liquid: {
+                '0%, 100%': { 'background-position': '0% 50%' },
+                '50%': { 'background-position': '100% 50%' },
+              }
             }
           }
         }
@@ -33,21 +50,95 @@
         background-color: #020617; /* slate-950 */
         color: #f8fafc;
         font-family: 'Amiri', serif;
+        overflow-x: hidden;
+        -webkit-tap-highlight-color: transparent;
       }
+
+      .mesh-gradient {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background-color: #020617;
+        background-image:
+          radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%),
+          radial-gradient(at 50% 0%, hsla(263,45%,20%,1) 0, transparent 50%),
+          radial-gradient(at 100% 0%, hsla(280,45%,20%,1) 0, transparent 50%),
+          radial-gradient(at 0% 100%, hsla(280,45%,20%,1) 0, transparent 50%),
+          radial-gradient(at 50% 100%, hsla(263,45%,20%,1) 0, transparent 50%),
+          radial-gradient(at 100% 100%, hsla(253,16%,7%,1) 0, transparent 50%);
+      }
+
+      .glass-card {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .liquid-button {
+        background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
+        box-shadow:
+            inset 0 1px 1px rgba(255,255,255,0.3),
+            0 4px 15px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+      }
+
+      .liquid-button:active {
+        transform: scale(0.95);
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+      }
+
+      .iridescent-text {
+        background: linear-gradient(to right, #fff, #a78bfa, #f472b6, #60a5fa, #fff);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: liquid 5s linear infinite;
+      }
+
+      .shiny-reflection {
+        position: relative;
+        overflow: hidden;
+      }
+      .shiny-reflection::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+        transform: rotate(45deg);
+        animation: shiny 4s infinite;
+      }
+      @keyframes shiny {
+        0% { transform: translateX(-100%) rotate(45deg); }
+        100% { transform: translateX(100%) rotate(45deg); }
+      }
+
       /* Custom Scrollbar */
       ::-webkit-scrollbar {
-        width: 8px;
+        width: 4px;
       }
       ::-webkit-scrollbar-track {
-        background: #0f172a; 
+        background: transparent;
       }
       ::-webkit-scrollbar-thumb {
-        background: #334155; 
-        border-radius: 4px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 10px;
       }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #475569; 
-      }
+
+      /* Simple animations for when tailwindcss-animate is missing */
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes slideInBottom { from { transform: translateY(2.5rem); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+      @keyframes slideInRight { from { transform: translateX(2.5rem); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+      .animate-in { animation-duration: 500ms; animation-fill-mode: both; }
+      .fade-in { animation-name: fadeIn; }
+      .slide-in-from-bottom-10 { animation-name: slideInBottom; }
+      .md\:slide-in-from-right-10 { @media (min-width: 768px) { animation-name: slideInRight; } }
     </style>
   <script type="importmap">
 {
@@ -64,6 +155,7 @@
 </script>
 </head>
   <body>
+    <div class="mesh-gradient"></div>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
