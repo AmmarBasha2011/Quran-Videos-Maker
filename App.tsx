@@ -306,7 +306,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-200 selection:bg-emerald-500/30 font-amiri" dir="rtl">
+    <div className="min-h-screen text-slate-200 selection:bg-emerald-500/30 font-amiri" dir="rtl">
       
       <DocumentationModal isOpen={showDocs} onClose={closeDocs} />
 
@@ -321,10 +321,10 @@ export default function App() {
         history={state.history}
       />
 
-      <main className="max-w-4xl mx-auto p-4 md:p-6 relative pb-24 md:pb-6">
+      <main className="max-w-5xl mx-auto p-3 md:p-6 relative pb-24 md:pb-12">
         <StepWizard currentStep={state.step} />
 
-        <div className="bg-slate-900/50 border border-slate-800/50 backdrop-blur-sm rounded-2xl p-4 md:p-8 min-h-[500px] shadow-2xl relative overflow-hidden flex flex-col">
+        <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2rem] p-5 md:p-10 min-h-[600px] shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] relative overflow-hidden flex flex-col">
           
           {state.step === 1 && (
             <DetailsStep 
@@ -408,11 +408,11 @@ export default function App() {
 
           {/* Navigation Buttons */}
           {!isExporting && !generatedVideoUrl && (
-            <div className="md:absolute md:bottom-6 md:left-0 md:w-full md:px-8 flex justify-between items-center mt-auto pt-6 md:pt-0">
+            <div className="md:absolute md:bottom-8 md:left-0 md:w-full md:px-10 flex justify-between items-center mt-auto pt-8 md:pt-0">
               <button 
                 onClick={handleBack}
                 disabled={state.step === 1}
-                className="flex items-center text-slate-500 hover:text-white disabled:opacity-0 transition-all px-4 py-2"
+                className="flex items-center text-slate-400 hover:text-white disabled:opacity-0 transition-all px-5 py-2.5 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10"
               >
                 <ChevronRight size={20} className="ml-1" /> السابق
               </button>
@@ -425,7 +425,7 @@ export default function App() {
                     (state.step === 2 && state.selectedAssets.length === 0) ||
                     (state.step === 3 && !state.audioFile)
                   }
-                  className="flex items-center bg-white text-black px-6 py-2 rounded-full font-bold hover:bg-emerald-400 transition-all disabled:opacity-50 disabled:hover:bg-white disabled:cursor-not-allowed shadow-lg"
+                  className="flex items-center bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-8 py-3 rounded-2xl font-bold hover:bg-emerald-500/30 transition-all disabled:opacity-30 disabled:hover:bg-emerald-500/20 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(16,185,129,0.1)] hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]"
                 >
                   التالي <ChevronLeft size={20} className="mr-1" />
                 </button>

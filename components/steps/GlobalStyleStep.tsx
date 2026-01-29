@@ -32,29 +32,29 @@ export const GlobalStyleStep: React.FC<Props> = ({ state, updateState }) => {
   };
 
   return (
-    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
       <div className="text-center md:text-right">
-        <h2 className="text-2xl font-bold font-rakkas text-emerald-100">الشكل العام</h2>
-        <p className="text-slate-400 text-sm">تحكم في الانتقالات، حركة النصوص، والتلوين التلقائي.</p>
+        <h2 className="text-2xl font-bold font-rakkas text-white">الشكل العام</h2>
+        <p className="text-slate-400 text-sm mt-1">تحكم في الانتقالات، حركة النصوص، والتلوين التلقائي.</p>
       </div>
 
       <div className="flex flex-col gap-6">
         
         {/* 1. Transitions */}
-        <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
-            <label className="text-base font-bold text-emerald-400 mb-4 flex items-center gap-2">
-                <Layers size={20} /> انتقالات الخلفية
+        <div className="bg-white/5 p-6 rounded-3xl border border-white/10 backdrop-blur-md shadow-lg">
+            <label className="text-sm font-bold text-emerald-400 mb-6 flex items-center gap-2 uppercase tracking-[0.2em]">
+                <Layers size={18} /> انتقالات الخلفية
             </label>
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-4">
                 <button 
                     onClick={() => updateGlobalStyle({ transitionType: 'fade' })}
-                    className={`flex-1 p-4 rounded-xl border text-sm font-bold transition-all active:scale-95 ${globalStyle.transitionType === 'fade' ? 'bg-emerald-900/40 border-emerald-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
+                    className={`flex-1 p-5 rounded-2xl border text-sm font-bold transition-all duration-300 active:scale-95 ${globalStyle.transitionType === 'fade' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 border-emerald-400' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:border-white/10'}`}
                 >
                     تلاشي (Cross Fade)
                 </button>
                 <button 
                     onClick={() => updateGlobalStyle({ transitionType: 'cut' })}
-                    className={`flex-1 p-4 rounded-xl border text-sm font-bold transition-all active:scale-95 ${globalStyle.transitionType === 'cut' ? 'bg-emerald-900/40 border-emerald-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
+                    className={`flex-1 p-5 rounded-2xl border text-sm font-bold transition-all duration-300 active:scale-95 ${globalStyle.transitionType === 'cut' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 border-emerald-400' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:border-white/10'}`}
                 >
                     قطع مباشر (Cut)
                 </button>
@@ -62,84 +62,85 @@ export const GlobalStyleStep: React.FC<Props> = ({ state, updateState }) => {
         </div>
 
         {/* 2. Text Animation */}
-        <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
-            <label className="text-base font-bold text-emerald-400 mb-4 flex items-center gap-2">
-                <MoveUp size={20} /> حركة ظهور الآيات
+        <div className="bg-white/5 p-6 rounded-3xl border border-white/10 backdrop-blur-md shadow-lg">
+            <label className="text-sm font-bold text-emerald-400 mb-6 flex items-center gap-2 uppercase tracking-[0.2em]">
+                <MoveUp size={18} /> حركة ظهور الآيات
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
                 <button 
                     onClick={() => updateGlobalStyle({ textAnimation: 'fade' })}
-                    className={`p-4 rounded-xl border text-sm font-bold transition-all active:scale-95 ${globalStyle.textAnimation === 'fade' ? 'bg-emerald-900/40 border-emerald-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
+                    className={`p-5 rounded-2xl border text-sm font-bold transition-all duration-300 active:scale-95 ${globalStyle.textAnimation === 'fade' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 border-emerald-400' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:border-white/10'}`}
                 >
-                    ظهور تدريجي (Fade In)
+                    ظهور تدريجي
                 </button>
                 <button 
                     onClick={() => updateGlobalStyle({ textAnimation: 'slideUp' })}
-                    className={`p-4 rounded-xl border text-sm font-bold transition-all active:scale-95 ${globalStyle.textAnimation === 'slideUp' ? 'bg-emerald-900/40 border-emerald-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
+                    className={`p-5 rounded-2xl border text-sm font-bold transition-all duration-300 active:scale-95 ${globalStyle.textAnimation === 'slideUp' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 border-emerald-400' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:border-white/10'}`}
                 >
-                    صعود للأعلى (Slide Up)
+                    صعود للأعلى
                 </button>
                 <button 
                     onClick={() => updateGlobalStyle({ textAnimation: 'scale' })}
-                    className={`p-4 rounded-xl border text-sm font-bold transition-all active:scale-95 ${globalStyle.textAnimation === 'scale' ? 'bg-emerald-900/40 border-emerald-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
+                    className={`p-5 rounded-2xl border text-sm font-bold transition-all duration-300 active:scale-95 ${globalStyle.textAnimation === 'scale' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 border-emerald-400' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:border-white/10'}`}
                 >
-                    تكبير (Scale Up)
+                    تكبير
                 </button>
                 <button 
                     onClick={() => updateGlobalStyle({ textAnimation: 'none' })}
-                    className={`p-4 rounded-xl border text-sm font-bold transition-all active:scale-95 ${globalStyle.textAnimation === 'none' ? 'bg-emerald-900/40 border-emerald-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
+                    className={`p-5 rounded-2xl border text-sm font-bold transition-all duration-300 active:scale-95 ${globalStyle.textAnimation === 'none' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 border-emerald-400' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:border-white/10'}`}
                 >
-                    ثابت (None)
+                    ثابت
                 </button>
             </div>
         </div>
 
         {/* 3. Auto Highlighting */}
-        <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 flex flex-col">
-            <label className="text-base font-bold text-emerald-400 mb-2 flex items-center gap-2">
-                <Wand2 size={20} /> التلوين التلقائي للكلمات
+        <div className="bg-white/5 p-6 rounded-3xl border border-white/10 backdrop-blur-md shadow-lg flex flex-col">
+            <label className="text-sm font-bold text-emerald-400 mb-2 flex items-center gap-2 uppercase tracking-[0.2em]">
+                <Wand2 size={18} /> التلوين التلقائي
             </label>
-            <p className="text-xs text-slate-500 mb-4">
-                أضف كلمات محددة ليتم تلوينها تلقائياً عند ظهورها في أي آية (مثلاً: الله، الجنة، نور).
+            <p className="text-xs text-slate-500 mb-6 font-medium">
+                أضف كلمات محددة ليتم تلوينها تلقائياً عند ظهورها (مثل: الله، الجنة).
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
                 <input 
                     type="text" 
                     placeholder="الكلمة (مثلاً: الله)" 
                     value={highlightWord}
                     onChange={(e) => setHighlightWord(e.target.value)}
-                    className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm text-white outline-none focus:border-emerald-500"
+                    className="flex-1 bg-black/20 border border-white/10 rounded-2xl p-4 text-sm text-white outline-none focus:border-emerald-500/50 transition-all placeholder:text-slate-600 font-bold"
                 />
                 <div className="flex gap-2">
                     <input 
                         type="color" 
                         value={highlightColor}
                         onChange={(e) => setHighlightColor(e.target.value)}
-                        className="w-12 h-12 rounded cursor-pointer bg-slate-900 border border-slate-700 p-1"
+                        className="w-14 h-14 rounded-2xl cursor-pointer bg-black/20 border border-white/10 p-1.5"
                     />
                     <button 
                         onClick={addHighlight}
-                        className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white px-6 rounded-lg transition-colors flex items-center justify-center"
+                        className="flex-1 sm:flex-none bg-emerald-500 hover:bg-emerald-400 text-white px-8 rounded-2xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center border border-emerald-400/50"
                     >
-                        <Plus size={24} />
+                        <Plus size={28} />
                     </button>
                 </div>
             </div>
 
-            <div className="bg-slate-900/50 rounded-xl p-3 border border-slate-800 min-h-[100px] max-h-[200px] overflow-y-auto custom-scrollbar space-y-2">
+            <div className="bg-black/20 rounded-2xl p-4 border border-white/5 min-h-[120px] max-h-[220px] overflow-y-auto no-scrollbar space-y-3 shadow-inner">
                 {globalStyle.autoHighlights.length === 0 ? (
-                    <div className="text-center py-8 text-slate-600 text-sm">
-                        لا توجد كلمات مضافة
+                    <div className="flex flex-col items-center justify-center py-8 text-slate-600 opacity-40 gap-2">
+                        <Wand2 size={24} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">لا توجد كلمات مضافة</span>
                     </div>
                 ) : (
                     globalStyle.autoHighlights.map((h, i) => (
-                        <div key={i} className="flex items-center justify-between bg-slate-950 p-3 rounded-lg border border-slate-800">
-                            <div className="flex items-center gap-3">
-                                <span className="w-5 h-5 rounded-full border border-white/10" style={{ backgroundColor: h.color }}></span>
-                                <span className="text-emerald-100 font-bold text-lg">{h.word}</span>
+                        <div key={i} className="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/5 shadow-sm transition-all hover:bg-white/10">
+                            <div className="flex items-center gap-4">
+                                <div className="w-4 h-4 rounded-full border border-white/20 shadow-sm" style={{ backgroundColor: h.color }}></div>
+                                <span className="text-white font-bold text-lg">{h.word}</span>
                             </div>
-                            <button onClick={() => removeHighlight(i)} className="text-slate-500 hover:text-red-400 p-2">
+                            <button onClick={() => removeHighlight(i)} className="text-slate-500 hover:text-red-400 p-2 transition-colors">
                                 <Trash2 size={18} />
                             </button>
                         </div>

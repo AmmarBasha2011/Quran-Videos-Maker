@@ -107,42 +107,42 @@ export const StyleStep: React.FC<Props> = ({ state, updateState }) => {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 flex-1">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 flex-1">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-           <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold font-rakkas">تخصيص المظهر</h2>
-                <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-emerald-400 font-mono border border-slate-700">
+           <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold font-rakkas text-white">تخصيص المظهر</h2>
+                <span className="text-[10px] bg-emerald-500/10 px-3 py-1 rounded-full text-emerald-400 font-bold border border-emerald-500/20 backdrop-blur-md">
                     {state.aspectRatio}
                 </span>
            </div>
-           <p className="text-xs text-slate-400">تحكم في الخطوط، الألوان، وأماكن النصوص.</p>
+           <p className="text-sm text-slate-400 mt-1">تحكم في الخطوط، الألوان، وأماكن النصوص.</p>
         </div>
       </div>
       
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-3 gap-8">
         
         {/* Settings Panel */}
-        <div className="md:col-span-1 space-y-4 bg-slate-950/50 p-4 rounded-xl border border-slate-800 h-fit flex flex-col order-2 md:order-1">
+        <div className="md:col-span-1 space-y-6 bg-white/5 p-6 rounded-3xl border border-white/10 h-fit flex flex-col order-2 md:order-1 backdrop-blur-md shadow-xl">
            
            {/* Tabs */}
-           <div className="flex bg-slate-900 rounded-lg p-1 mb-2">
+           <div className="flex bg-black/20 rounded-2xl p-1.5 mb-2 border border-white/5">
                <button 
                  onClick={() => setActiveTab('surah')}
-                 className={`flex-1 py-2 rounded text-[10px] md:text-xs font-bold transition-all ${activeTab === 'surah' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                 className={`flex-1 py-2.5 rounded-xl text-[10px] md:text-xs font-bold transition-all duration-300 ${activeTab === 'surah' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white'}`}
                >
                  اسم السورة
                </button>
                <button 
                  onClick={() => setActiveTab('reader')}
-                 className={`flex-1 py-2 rounded text-[10px] md:text-xs font-bold transition-all ${activeTab === 'reader' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                 className={`flex-1 py-2.5 rounded-xl text-[10px] md:text-xs font-bold transition-all duration-300 ${activeTab === 'reader' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white'}`}
                >
                  اسم القارئ
                </button>
                {state.quranConfig.isEnabled && (
                    <button 
                      onClick={() => setActiveTab('quran')}
-                     className={`flex-1 py-2 rounded text-[10px] md:text-xs font-bold transition-all ${activeTab === 'quran' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                     className={`flex-1 py-2.5 rounded-xl text-[10px] md:text-xs font-bold transition-all duration-300 ${activeTab === 'quran' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white'}`}
                    >
                      الآيات
                    </button>
@@ -150,83 +150,85 @@ export const StyleStep: React.FC<Props> = ({ state, updateState }) => {
            </div>
 
            {/* Controls Container */}
-           <div className="space-y-4 overflow-y-auto max-h-[350px] custom-scrollbar pr-1">
+           <div className="space-y-6 overflow-y-auto max-h-[400px] no-scrollbar pr-1">
                
                {/* Color */}
-               <div className="space-y-2">
-                 <label className="text-xs font-bold text-slate-300 flex items-center gap-2">
+               <div className="space-y-3">
+                 <label className="text-[10px] font-bold text-slate-400 flex items-center gap-2 uppercase tracking-widest">
                    <Palette size={14} /> {activeTab === 'quran' ? 'لون النص' : 'اللون'}
                  </label>
-                 <div className="flex items-center gap-3">
+                 <div className="flex items-center gap-4 bg-black/20 p-2 rounded-2xl border border-white/5 shadow-inner">
                     <input 
                         type="color" 
                         value={currentStyle.color}
                         onChange={(e) => updateCurrentStyle({ color: e.target.value })}
-                        className="w-10 h-10 rounded cursor-pointer bg-transparent border-none"
+                        className="w-12 h-12 rounded-xl cursor-pointer bg-transparent border-none"
                     />
-                    <span className="text-xs font-mono text-slate-500 uppercase">{currentStyle.color}</span>
+                    <span className="text-xs font-mono text-slate-400 font-bold uppercase tracking-widest">{currentStyle.color}</span>
                  </div>
                </div>
 
                {/* Quran Specific: Highlight Color */}
                {activeTab === 'quran' && (
-                   <div className="space-y-2 pt-2 border-t border-slate-800">
-                     <label className="text-xs font-bold text-slate-300 flex items-center gap-2">
-                       <BookOpen size={14} /> لون التمييز (Highlight)
+                   <div className="space-y-3 pt-4 border-t border-white/5">
+                     <label className="text-[10px] font-bold text-slate-400 flex items-center gap-2 uppercase tracking-widest">
+                       <BookOpen size={14} /> لون التمييز
                      </label>
-                     <div className="flex items-center gap-3">
+                     <div className="flex items-center gap-4 bg-black/20 p-2 rounded-2xl border border-white/5 shadow-inner">
                         <input 
                             type="color" 
                             value={state.quranConfig.highlightColor}
                             onChange={(e) => updateQuranConfig({ highlightColor: e.target.value })}
-                            className="w-10 h-10 rounded cursor-pointer bg-transparent border-none"
+                            className="w-12 h-12 rounded-xl cursor-pointer bg-transparent border-none"
                         />
-                        <span className="text-[10px] text-slate-500">اضغط على الكلمة في المعاينة لتلوينها</span>
+                        <span className="text-[10px] text-slate-500 font-medium">اضغط على الكلمة في المعاينة</span>
                      </div>
                    </div>
                )}
 
                {/* Size */}
-               <div className="space-y-2">
-                 <label className="text-xs font-bold text-slate-300 flex items-center gap-2">
+               <div className="space-y-4">
+                 <label className="text-[10px] font-bold text-slate-400 flex items-center gap-2 uppercase tracking-widest">
                    <Maximize size={14} /> الحجم
                  </label>
                  <input 
                     type="range" min="0.5" max="3.0" step="0.1"
                     value={currentStyle.fontSizeScale}
                     onChange={(e) => updateCurrentStyle({ fontSizeScale: parseFloat(e.target.value) })}
-                    className="w-full accent-emerald-500 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-1.5 bg-white/5 rounded-lg appearance-none cursor-pointer accent-emerald-500 border border-white/5"
                  />
                </div>
 
                {/* Shadow Toggle */}
-               <div className="flex items-center justify-between p-2 bg-slate-900 rounded-lg border border-slate-800">
-                    <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+               <div
+                    onClick={() => updateCurrentStyle({ hasShadow: !currentStyle.hasShadow })}
+                    className="flex items-center justify-between bg-black/20 p-4 rounded-2xl border border-white/5 cursor-pointer hover:bg-black/30 transition-all group"
+               >
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-300 group-hover:text-white transition-colors">
                         <Layers size={14} /> ظل للنص
                     </div>
                     <div 
-                        onClick={() => updateCurrentStyle({ hasShadow: !currentStyle.hasShadow })}
-                        className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${currentStyle.hasShadow ? 'bg-emerald-600' : 'bg-slate-700'}`}
+                        className={`w-12 h-6 rounded-full relative transition-all duration-500 ${currentStyle.hasShadow ? 'bg-emerald-500' : 'bg-white/10'}`}
                     >
-                        <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${currentStyle.hasShadow ? 'left-1' : 'left-6'}`} />
+                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-500 shadow-md ${currentStyle.hasShadow ? 'left-7' : 'left-1'}`} />
                     </div>
                </div>
 
                {/* Font Picker */}
-               <div className="space-y-2">
-                 <label className="text-xs font-bold text-slate-300 flex items-center gap-2">
+               <div className="space-y-4">
+                 <label className="text-[10px] font-bold text-slate-400 flex items-center gap-2 uppercase tracking-widest">
                    <TypeIcon size={14} /> الخط العربي
                  </label>
-                 <div className="grid grid-cols-1 gap-1">
+                 <div className="grid grid-cols-1 gap-2">
                    {FONTS.map(font => (
                      <button
                        key={font.value}
                        onClick={() => updateCurrentStyle({ font: font.value })}
-                       className={`text-sm py-2 px-3 rounded text-right transition-all border flex justify-between items-center ${currentStyle.font === font.value ? 'bg-emerald-900/40 border-emerald-500/50 text-emerald-400' : 'bg-slate-900 border-slate-700 text-slate-400 hover:bg-slate-800'}`}
+                       className={`text-sm py-3 px-4 rounded-xl text-right transition-all duration-300 border flex justify-between items-center ${currentStyle.font === font.value ? 'bg-emerald-500/20 border-emerald-500 shadow-md text-emerald-400' : 'bg-black/20 border-white/5 text-slate-400 hover:bg-black/40 hover:border-white/10'}`}
                        style={{ fontFamily: font.value === 'Scheherazade New' ? '"Scheherazade New", serif' : font.value }}
                      >
-                       <span>{font.label}</span>
-                       <span className="text-[10px] bg-slate-950 px-1 rounded text-slate-600">{font.category}</span>
+                       <span className="font-medium">{font.label}</span>
+                       <span className="text-[9px] font-bold bg-white/5 px-2 py-0.5 rounded-full text-slate-500 uppercase tracking-tighter">{font.category}</span>
                      </button>
                    ))}
                  </div>
@@ -236,10 +238,10 @@ export const StyleStep: React.FC<Props> = ({ state, updateState }) => {
         </div>
 
         {/* Preview & Drag Area */}
-        <div className="md:col-span-2 space-y-2 flex flex-col justify-center order-1 md:order-2">
+        <div className="md:col-span-2 space-y-4 flex flex-col justify-center order-1 md:order-2">
           <div 
             ref={containerRef}
-            className={`${getAspectRatioClass()} bg-black rounded-lg border border-slate-700 relative overflow-hidden cursor-crosshair select-none shadow-2xl transition-all duration-500`}
+            className={`${getAspectRatioClass()} bg-slate-900 rounded-3xl border border-white/10 relative overflow-hidden cursor-crosshair select-none shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 group/preview`}
             onMouseMove={onMouseMove}
             onTouchMove={onTouchMove}
             dir="ltr"

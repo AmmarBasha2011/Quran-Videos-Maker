@@ -174,65 +174,74 @@ export const TextOverlayStep: React.FC<Props> = ({ state, updateState, audioDura
 
   if (!config.isEnabled) {
       return (
-          <div className="flex flex-col items-center justify-center h-full py-20 text-center space-y-6 animate-in fade-in relative">
-              <div className="absolute top-0 right-0 p-2">
-                 <span className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1">
-                    <Beaker size={12} /> ميزة تجريبية
+          <div className="flex flex-col items-center justify-center h-full py-20 text-center space-y-8 animate-in fade-in relative">
+              <div className="absolute top-0 right-0 p-4">
+                 <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-[10px] font-bold flex items-center gap-2 backdrop-blur-md">
+                    <Beaker size={14} /> ميزة متقدمة
                  </span>
               </div>
-              <Type size={64} className="text-slate-600 mb-4" />
-              <h2 className="text-2xl font-bold font-rakkas text-white">إضافة النص القرآني</h2>
-              <p className="text-slate-400 max-w-md">إظهار الآيات متزامنة مع التلاوة باستخدام Gemini 3.</p>
-              <button onClick={() => updateConfig({ isEnabled: true })} className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-full font-bold shadow-lg transition-all transform hover:scale-105 mt-4">
-                  تفعيل الآيات (تجريبي)
+              <div className="w-24 h-24 bg-white/5 rounded-[2rem] flex items-center justify-center text-slate-500 border border-white/10 shadow-xl backdrop-blur-md">
+                <Type size={48} />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold font-rakkas text-white">إضافة النص القرآني</h2>
+                <p className="text-slate-400 max-w-sm mt-3 font-medium">إظهار الآيات متزامنة مع التلاوة باستخدام الذكاء الاصطناعي.</p>
+              </div>
+              <button onClick={() => updateConfig({ isEnabled: true })} className="bg-emerald-500 hover:bg-emerald-400 text-white px-10 py-4 rounded-2xl font-bold shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all hover:scale-105 active:scale-95 mt-4 border border-emerald-400/50">
+                  تفعيل الآيات والترجمة
               </button>
           </div>
       );
   }
 
   return (
-    <div className="flex flex-col h-full space-y-6 animate-in slide-in-from-bottom-4">
+    <div className="flex flex-col h-full space-y-8 animate-in slide-in-from-bottom-4">
         
         {/* Header with Disable Button */}
-        <div className="flex justify-between items-center bg-slate-900 p-2 rounded-lg">
-            <div className="flex gap-2">
-                <button onClick={() => setActiveTab('setup')} className={`px-4 py-2 rounded text-sm font-bold transition-all ${activeTab === 'setup' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>1. اختيار الآيات</button>
-                <button onClick={() => setActiveTab('sync')} disabled={config.verses.length === 0} className={`px-4 py-2 rounded text-sm font-bold transition-all ${activeTab === 'sync' ? 'bg-emerald-600 text-white' : 'text-slate-400 disabled:opacity-30'}`}>2. الذكاء الاصطناعي</button>
+        <div className="flex justify-between items-center bg-white/5 p-2 rounded-2xl border border-white/5 backdrop-blur-md">
+            <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
+                <button onClick={() => setActiveTab('setup')} className={`px-5 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${activeTab === 'setup' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white'}`}>1. اختيار الآيات</button>
+                <button onClick={() => setActiveTab('sync')} disabled={config.verses.length === 0} className={`px-5 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${activeTab === 'sync' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white disabled:opacity-20'}`}>2. المزامنة الذكية</button>
             </div>
             <button 
                 onClick={() => updateConfig({ isEnabled: false })}
-                className="text-red-400 hover:text-red-300 text-xs flex items-center gap-1 px-3 py-1.5 rounded hover:bg-red-900/20 border border-transparent hover:border-red-900/30 transition-all"
+                className="text-red-400 hover:text-red-300 text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20"
             >
-                <Power size={14} /> تعطيل الميزة
+                <Power size={14} /> تعطيل
             </button>
         </div>
 
         {activeTab === 'setup' && (
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto w-full">
-                <div className="bg-slate-950/50 p-6 rounded-xl border border-slate-800 space-y-4">
-                    <h3 className="text-lg font-bold text-emerald-400 flex items-center gap-2"><Search size={18}/> تحديد المقطع</h3>
-                    <div>
-                        <label className="block text-xs text-slate-400 mb-1">السورة</label>
-                        <select className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white outline-none focus:border-emerald-500 custom-scrollbar" value={config.surahNumber} onChange={(e) => updateConfig({ surahNumber: parseInt(e.target.value), fromAyah: 1, toAyah: 1 })}>
-                            {SURAH_NAMES.map((name, i) => (<option key={i} value={i + 1}>{i + 1}. {name}</option>))}
-                        </select>
+                <div className="bg-white/5 p-8 rounded-3xl border border-white/10 space-y-6 backdrop-blur-md shadow-xl">
+                    <h3 className="text-xl font-bold text-white flex items-center gap-3"><Search size={22} className="text-emerald-400"/> تحديد المقطع</h3>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest mr-1">السورة</label>
+                            <select className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-emerald-500/50 custom-scrollbar transition-all font-medium" value={config.surahNumber} onChange={(e) => updateConfig({ surahNumber: parseInt(e.target.value), fromAyah: 1, toAyah: 1 })}>
+                                {SURAH_NAMES.map((name, i) => (<option key={i} value={i + 1} className="bg-slate-900">{i + 1}. {name}</option>))}
+                            </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div><label className="block text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest mr-1">من آية</label><input type="number" min="1" max={VERSE_COUNTS[config.surahNumber]} value={config.fromAyah} onChange={(e) => updateConfig({ fromAyah: parseInt(e.target.value) })} className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-white text-center outline-none focus:border-emerald-500/50 transition-all font-bold"/></div>
+                            <div><label className="block text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest mr-1">إلى آية</label><input type="number" min={config.fromAyah} max={VERSE_COUNTS[config.surahNumber]} value={config.toAyah} onChange={(e) => updateConfig({ toAyah: parseInt(e.target.value) })} className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-white text-center outline-none focus:border-emerald-500/50 transition-all font-bold"/></div>
+                        </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div><label className="block text-xs text-slate-400 mb-1">من آية</label><input type="number" min="1" max={VERSE_COUNTS[config.surahNumber]} value={config.fromAyah} onChange={(e) => updateConfig({ fromAyah: parseInt(e.target.value) })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-center outline-none focus:border-emerald-500"/></div>
-                        <div><label className="block text-xs text-slate-400 mb-1">إلى آية</label><input type="number" min={config.fromAyah} max={VERSE_COUNTS[config.surahNumber]} value={config.toAyah} onChange={(e) => updateConfig({ toAyah: parseInt(e.target.value) })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-center outline-none focus:border-emerald-500"/></div>
-                    </div>
-                    <button onClick={handleFetchVerses} disabled={loading} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-all mt-4">
-                        {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Download size={18} />} جلب النص
+                    <button onClick={handleFetchVerses} disabled={loading} className="w-full bg-emerald-500 hover:bg-emerald-400 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all shadow-lg shadow-emerald-500/20 mt-4 border border-emerald-400/50">
+                        {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Download size={20} />} جلب النص
                     </button>
-                    {error && <p className="text-red-400 text-xs text-center">{error}</p>}
+                    {error && <p className="text-red-400 text-xs text-center font-bold bg-red-500/10 p-2 rounded-lg border border-red-500/20">{error}</p>}
                 </div>
-                <div className="bg-slate-900/30 p-4 rounded-xl border border-slate-800 flex flex-col items-center justify-center text-center">
+                <div className="bg-black/20 p-6 rounded-3xl border border-white/5 flex flex-col items-center justify-center text-center backdrop-blur-sm shadow-inner overflow-hidden">
                     {config.verses.length > 0 ? (
-                        <div className="space-y-2 w-full max-h-[300px] overflow-y-auto custom-scrollbar">
-                            {config.verses.map((v, i) => (<div key={i} className="bg-slate-950 p-3 rounded border border-slate-800 text-emerald-100 font-amiri text-lg">{v.text} <span className="text-emerald-500 text-sm">({v.numberInSurah})</span></div>))}
+                        <div className="space-y-3 w-full max-h-[350px] overflow-y-auto no-scrollbar py-2">
+                            {config.verses.map((v, i) => (<div key={i} className="bg-white/5 p-4 rounded-2xl border border-white/10 text-emerald-50 font-amiri text-xl leading-relaxed shadow-sm hover:bg-white/10 transition-all">{v.text} <span className="text-emerald-400 text-sm font-bold opacity-60">({v.numberInSurah})</span></div>))}
                         </div>
                     ) : (
-                        <div className="text-slate-500"><Type size={40} className="mx-auto mb-2 opacity-20" /><p>ستظهر الآيات هنا</p></div>
+                        <div className="text-slate-600 group">
+                            <Type size={50} className="mx-auto mb-4 opacity-10 group-hover:opacity-20 transition-opacity duration-700" />
+                            <p className="font-bold text-sm uppercase tracking-[0.2em] opacity-30">ستظهر الآيات هنا</p>
+                        </div>
                     )}
                 </div>
             </div>
@@ -241,67 +250,69 @@ export const TextOverlayStep: React.FC<Props> = ({ state, updateState, audioDura
         {activeTab === 'sync' && (
             <div className="max-w-4xl mx-auto w-full flex flex-col md:flex-row gap-6 h-full min-h-[500px]">
                 <div className="w-full md:w-1/3 flex flex-col gap-4">
-                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2"><Key size={14} className="text-yellow-500"/> API Vault</h3>
-                        <div className="space-y-2 mb-3 max-h-32 overflow-y-auto custom-scrollbar">
-                            {config.apiKeys.map((k, i) => (<div key={i} className="flex items-center justify-between bg-slate-900 p-2 rounded text-xs"><span className="font-mono text-slate-400 truncate w-32">••••{k.slice(-4)}</span><button onClick={() => removeKey(i)} className="text-red-500 hover:text-red-400"><Trash2 size={12}/></button></div>))}
+                    <div className="bg-white/5 p-5 rounded-2xl border border-white/10 backdrop-blur-md shadow-lg">
+                        <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2"><Key size={16} className="text-yellow-400"/> API Vault</h3>
+                        <div className="space-y-2 mb-4 max-h-32 overflow-y-auto no-scrollbar">
+                            {config.apiKeys.map((k, i) => (<div key={i} className="flex items-center justify-between bg-black/20 p-2 rounded-xl text-xs border border-white/5"><span className="font-mono text-slate-400 truncate w-32">••••{k.slice(-4)}</span><button onClick={() => removeKey(i)} className="text-red-400 hover:text-red-300 transition-colors"><Trash2 size={14}/></button></div>))}
                         </div>
-                        <div className="flex gap-2">
-                            <input type="password" placeholder="Gemini API Key..." value={newKey} onChange={(e) => setNewKey(e.target.value)} className="flex-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white outline-none focus:border-emerald-500"/>
-                            <button onClick={addKey} className="bg-slate-800 hover:bg-slate-700 text-white p-1.5 rounded"><Plus size={14}/></button>
+                        <div className="flex gap-2 bg-black/20 p-1.5 rounded-xl border border-white/5">
+                            <input type="password" placeholder="Gemini API Key..." value={newKey} onChange={(e) => setNewKey(e.target.value)} className="flex-1 bg-transparent p-1.5 text-xs text-white outline-none placeholder:text-slate-600"/>
+                            <button onClick={addKey} className="bg-emerald-500 hover:bg-emerald-400 text-white p-2 rounded-lg transition-all shadow-md"><Plus size={16}/></button>
                         </div>
                     </div>
 
-                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex-1 flex flex-col justify-center gap-4">
+                    <div className="bg-white/5 p-6 rounded-3xl border border-white/10 flex-1 flex flex-col justify-center gap-6 backdrop-blur-md shadow-xl overflow-hidden">
                         {!syncing ? (
                             <>
-                                <div className="text-center space-y-3">
-                                    <ShieldCheck className="mx-auto text-emerald-500" size={32} />
-                                    <h3 className="font-bold text-white">V3 Smart Sync</h3>
+                                <div className="text-center space-y-4">
+                                    <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto text-emerald-400 border border-emerald-500/20 shadow-lg mb-2">
+                                        <ShieldCheck size={32} />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-white uppercase tracking-wider">Smart Sync V3</h3>
                                     
                                     {/* Mode Selector */}
-                                    <div className="grid grid-cols-3 gap-2 text-xs">
+                                    <div className="grid grid-cols-3 gap-2">
                                         <button 
                                             onClick={() => setSelectedMode('fast')}
-                                            className={`p-2 rounded border transition-all ${selectedMode === 'fast' ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
+                                            className={`p-2 rounded-xl border font-bold transition-all duration-300 ${selectedMode === 'fast' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-black/20 border-white/5 text-slate-500'}`}
                                         >
-                                            سريع
-                                            <span className="block text-[8px] opacity-70">~20 ثانية</span>
+                                            <span className="text-[10px]">سريع</span>
+                                            <span className="block text-[8px] opacity-60">~20s</span>
                                         </button>
                                         <button 
                                             onClick={() => setSelectedMode('medium')}
-                                            className={`p-2 rounded border transition-all ${selectedMode === 'medium' ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
+                                            className={`p-2 rounded-xl border font-bold transition-all duration-300 ${selectedMode === 'medium' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-black/20 border-white/5 text-slate-500'}`}
                                         >
-                                            متوسط
-                                            <span className="block text-[8px] opacity-70">~40 ثانية</span>
+                                            <span className="text-[10px]">متوسط</span>
+                                            <span className="block text-[8px] opacity-60">~40s</span>
                                         </button>
                                         <button 
                                             onClick={() => setSelectedMode('heavy')}
-                                            className={`p-2 rounded border transition-all ${selectedMode === 'heavy' ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
+                                            className={`p-2 rounded-xl border font-bold transition-all duration-300 ${selectedMode === 'heavy' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-black/20 border-white/5 text-slate-500'}`}
                                         >
-                                            ثقيل
-                                            <span className="block text-[8px] opacity-70">~90 ثانية</span>
+                                            <span className="text-[10px]">دقيق</span>
+                                            <span className="block text-[8px] opacity-60">~90s</span>
                                         </button>
                                     </div>
 
-                                    <button onClick={handleGeminiSync} disabled={config.apiKeys.length === 0} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white py-2.5 rounded-lg font-bold shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm">
-                                        بدء المعالجة ({selectedMode})
+                                    <button onClick={handleGeminiSync} disabled={config.apiKeys.length === 0} className="w-full bg-emerald-500 hover:bg-emerald-400 text-white py-3.5 rounded-2xl font-bold shadow-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed text-sm border border-emerald-400/50">
+                                        بدء المعالجة الذكية
                                     </button>
-                                    {error && <p className="text-red-400 text-xs">{error}</p>}
+                                    {error && <p className="text-red-400 text-[10px] font-bold bg-red-500/10 p-2 rounded-lg border border-red-500/20">{error}</p>}
                                 </div>
-                                <div className="border-t border-slate-800 pt-3 opacity-50 select-none grayscale cursor-not-allowed">
-                                    <div className="flex items-center gap-2 mb-2"><CopyPlus size={16} className="text-slate-400"/><span className="text-sm font-bold text-slate-400">إنشاء نسختين؟ (غير متاح حالياً)</span></div>
-                                    <label className="flex items-center gap-2 bg-slate-900 p-2 rounded border border-slate-800 cursor-not-allowed">
-                                        <input type="checkbox" className="accent-emerald-500 w-4 h-4 cursor-not-allowed" checked={false} disabled/>
-                                        <span className="text-xs text-slate-500">نسخة بالآيات + نسخة خام</span>
-                                    </label>
+                                <div className="border-t border-white/5 pt-4 opacity-40 grayscale select-none cursor-not-allowed">
+                                    <div className="flex items-center gap-2 mb-3"><CopyPlus size={16} className="text-slate-400"/><span className="text-xs font-bold text-slate-400 uppercase tracking-tight">إصدارات متعددة (Soon)</span></div>
+                                    <div className="flex items-center gap-3 bg-black/20 p-3 rounded-xl border border-white/5">
+                                        <div className="w-8 h-4 bg-white/10 rounded-full relative"><div className="absolute top-1 left-1 w-2 h-2 bg-white/20 rounded-full"/></div>
+                                        <span className="text-[10px] font-bold text-slate-500">نسخة بالآيات + نسخة خام</span>
+                                    </div>
                                 </div>
                             </>
                         ) : (
-                            <div className="flex flex-col gap-4">
-                                <div className="text-center space-y-2">
-                                    <p className="text-sm font-bold text-emerald-400 animate-pulse">{syncMessage}</p>
-                                    <div className="h-1 w-full bg-slate-900 rounded-full overflow-hidden"><div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${syncProgress}%` }}></div></div>
+                            <div className="flex flex-col gap-6">
+                                <div className="text-center space-y-3">
+                                    <p className="text-sm font-bold text-emerald-400 animate-pulse uppercase tracking-widest">{syncMessage}</p>
+                                    <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden border border-white/5 shadow-inner"><div className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-700 shadow-[0_0_15px_rgba(16,185,129,0.5)]" style={{ width: `${syncProgress}%` }}></div></div>
                                 </div>
                                 <MemoryGame />
                             </div>
@@ -309,25 +320,25 @@ export const TextOverlayStep: React.FC<Props> = ({ state, updateState, audioDura
                     </div>
                 </div>
 
-                <div className="flex-1 bg-slate-900/30 rounded-xl border border-slate-800 p-2 flex flex-col h-full overflow-hidden">
-                    <div className="flex justify-between items-center px-2 py-2 border-b border-slate-800 mb-2 shrink-0">
-                        <h4 className="text-xs font-bold text-slate-400 flex items-center gap-1"><PlayCircle size={14}/> المحرر الزمني</h4>
-                        <button onClick={addSegment} className="text-emerald-400 hover:text-emerald-300 text-xs flex items-center gap-1"><Plus size={12}/> إضافة</button>
+                <div className="flex-1 bg-black/20 rounded-3xl border border-white/5 p-4 flex flex-col h-full overflow-hidden shadow-inner backdrop-blur-sm">
+                    <div className="flex justify-between items-center px-2 pb-4 border-b border-white/5 mb-4 shrink-0">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2"><PlayCircle size={16} className="text-emerald-400"/> Timeline Editor</h4>
+                        <button onClick={addSegment} className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-[10px] font-bold py-1.5 px-3 rounded-lg flex items-center gap-1.5 transition-all border border-emerald-500/20"><Plus size={12}/> إضافة مقطع</button>
                     </div>
-                    <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 p-1">
+                    <div className="flex-1 overflow-y-auto no-scrollbar space-y-3 p-1">
                         {config.timings.map((t, i) => (
-                            <div key={i} className="flex flex-col gap-2 bg-slate-950 p-3 rounded border border-slate-800 hover:border-emerald-500/30 transition-colors">
-                                <div className="flex items-start gap-2">
-                                    <span className="w-6 h-6 bg-slate-900 rounded-full flex items-center justify-center text-xs text-slate-400 shrink-0 mt-1">{i+1}</span>
-                                    <textarea value={t.text} onChange={(e) => updateTiming(i, { text: e.target.value })} className="flex-1 bg-transparent text-emerald-100 font-amiri text-lg outline-none resize-none border-b border-transparent focus:border-slate-700 leading-loose" rows={1} dir="rtl"/>
-                                    <div className="flex flex-col gap-1"><button onClick={() => splitSegment(i)} className="p-1.5 bg-slate-900 text-blue-400 rounded hover:bg-slate-800"><Split size={14} /></button><button onClick={() => deleteSegment(i)} className="p-1.5 bg-slate-900 text-red-400 rounded hover:bg-slate-800"><Trash2 size={14} /></button></div>
+                            <div key={i} className="flex flex-col gap-3 bg-white/5 p-4 rounded-2xl border border-white/10 hover:border-emerald-500/30 transition-all shadow-md group">
+                                <div className="flex items-start gap-4">
+                                    <span className="w-7 h-7 bg-black/40 rounded-lg flex items-center justify-center text-[10px] font-bold text-emerald-400 shrink-0 border border-white/5 shadow-inner">{i+1}</span>
+                                    <textarea value={t.text} onChange={(e) => updateTiming(i, { text: e.target.value })} className="flex-1 bg-transparent text-white font-amiri text-lg outline-none resize-none border-b border-transparent focus:border-white/10 transition-all leading-loose p-0" rows={1} dir="rtl"/>
+                                    <div className="flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-all"><button onClick={() => splitSegment(i)} className="p-1.5 bg-white/5 text-blue-400 rounded-lg hover:bg-white/10 border border-white/5"><Split size={14} /></button><button onClick={() => deleteSegment(i)} className="p-1.5 bg-white/5 text-red-400 rounded-lg hover:bg-white/10 border border-white/5"><Trash2 size={14} /></button></div>
                                 </div>
-                                <div className="flex items-center gap-2 bg-slate-900/50 p-1.5 rounded self-end">
-                                    <input type="number" step="0.1" value={t.startTime} onChange={(e) => updateTiming(i, { startTime: parseFloat(e.target.value) })} className="w-14 bg-slate-950 text-white text-center text-xs p-1 rounded border border-slate-700 outline-none focus:border-emerald-500"/><span className="text-slate-500 text-xs">➜</span><input type="number" step="0.1" value={t.endTime} onChange={(e) => updateTiming(i, { endTime: parseFloat(e.target.value) })} className="w-14 bg-slate-950 text-white text-center text-xs p-1 rounded border border-slate-700 outline-none focus:border-emerald-500"/>
+                                <div className="flex items-center gap-2 bg-black/30 p-2 rounded-xl self-end border border-white/5 shadow-inner">
+                                    <input type="number" step="0.1" value={t.startTime} onChange={(e) => updateTiming(i, { startTime: parseFloat(e.target.value) })} className="w-16 bg-transparent text-white text-center text-xs font-bold outline-none"/><span className="text-slate-600 text-[10px] font-bold">TO</span><input type="number" step="0.1" value={t.endTime} onChange={(e) => updateTiming(i, { endTime: parseFloat(e.target.value) })} className="w-16 bg-transparent text-white text-center text-xs font-bold outline-none"/>
                                 </div>
                             </div>
                         ))}
-                         {config.timings.length === 0 && <div className="text-center py-10 text-slate-500"><Wand2 size={32} className="mx-auto mb-2 opacity-20"/><p>المقاطع ستظهر هنا</p></div>}
+                         {config.timings.length === 0 && <div className="flex flex-col items-center justify-center py-20 text-slate-600 opacity-20"><Wand2 size={48} className="mb-4"/><p className="text-xs font-bold uppercase tracking-widest">المقاطع ستظهر هنا</p></div>}
                     </div>
                 </div>
             </div>

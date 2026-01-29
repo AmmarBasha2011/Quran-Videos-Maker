@@ -31,8 +31,15 @@
     <style>
       body {
         background-color: #020617; /* slate-950 */
+        background-image:
+          radial-gradient(at 0% 0%, hsla(161, 85%, 26%, 0.2) 0px, transparent 50%),
+          radial-gradient(at 100% 0%, hsla(217, 91%, 32%, 0.2) 0px, transparent 50%),
+          radial-gradient(at 100% 100%, hsla(161, 85%, 26%, 0.2) 0px, transparent 50%),
+          radial-gradient(at 0% 100%, hsla(217, 91%, 32%, 0.2) 0px, transparent 50%);
+        background-attachment: fixed;
         color: #f8fafc;
         font-family: 'Amiri', serif;
+        min-height: 100vh;
       }
       /* Custom Scrollbar */
       ::-webkit-scrollbar {
