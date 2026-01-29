@@ -37,13 +37,19 @@ app.post('/api/generate', upload.single('audio'), async (req, res) => {
         console.log('Starting video generation for:', config.surahName);
         const outputPath = await generateVideo(audioFile.path, config);
         res.download(outputPath, (err) => {
+            // Cleanup files after download or error
+            try {
+                if (fs.existsSync(audioFile.path))
+                    fs.unlinkSync(audioFile.path);
+                if (fs.existsSync(outputPath))
+                    fs.unlinkSync(outputPath);
+            }
+            catch (cleanupErr) {
+                console.error('Cleanup error:', cleanupErr);
+            }
             if (err) {
                 console.error('Download error:', err);
             }
-            // Cleanup
-            fs.unlinkSync(audioFile.path);
-            // We might want to keep the output for a while or delete it immediately
-            // fs.unlinkSync(outputPath);
         });
     }
     catch (error) {
