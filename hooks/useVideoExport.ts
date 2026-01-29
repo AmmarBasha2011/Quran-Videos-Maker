@@ -60,27 +60,47 @@ export const useVideoExport = () => {
             const { jobId } = await response.json();
             localStorage.setItem('activeJobId', jobId);
 
-            // Polling
+            // Polling with robust retries and cache-busting
+            let retryCount = 0;
             const poll = async () => {
-                const res = await fetch(`/api/jobs/${jobId}`);
-                if (!res.ok) throw new Error("Job tracking failed");
-                const job = await res.json();
+                try {
+                    const res = await fetch(`/api/jobs/${jobId}?t=${Date.now()}`);
+                    if (!res.ok) {
+                        if (res.status >= 500 && retryCount < 5) {
+                            retryCount++;
+                            setTimeout(poll, 2000 * retryCount);
+                            return;
+                        }
+                        throw new Error("Job tracking failed");
+                    }
+                    const job = await res.json();
+                    retryCount = 0; // Reset on success
 
-                if (job.status === 'completed') {
-                    setExportProgress(95);
-                    const downloadRes = await fetch(`/api/jobs/${jobId}/download`);
-                    const blob = await downloadRes.blob();
-                    const url = URL.createObjectURL(blob);
+                    if (job.status === 'completed') {
+                        setExportProgress(95);
+                        const downloadRes = await fetch(`/api/jobs/${jobId}/download?t=${Date.now()}`);
+                        const blob = await downloadRes.blob();
+                        const url = URL.createObjectURL(blob);
 
-                    localStorage.removeItem('activeJobId');
-                    setIsExporting(false);
-                    setExportProgress(100);
-                    onComplete(url);
-                } else if (job.status === 'failed') {
-                    throw new Error(job.error || "Server processing failed");
-                } else {
-                    setExportProgress(job.progress);
-                    setTimeout(poll, 3000);
+                        localStorage.removeItem('activeJobId');
+                        setIsExporting(false);
+                        setExportProgress(100);
+                        onComplete(url);
+                    } else if (job.status === 'failed') {
+                        throw new Error(job.error || "Server processing failed");
+                    } else {
+                        setExportProgress(job.progress);
+                        setTimeout(poll, 3000);
+                    }
+                } catch (e) {
+                    console.error("Polling Error:", e);
+                    if (retryCount < 5) {
+                        retryCount++;
+                        setTimeout(poll, 3000);
+                    } else {
+                        alert("فشلت متابعة العملية على السيرفر. قد يكون السيرفر مشغولاً حالياً.");
+                        setIsExporting(false);
+                    }
                 }
             };
 

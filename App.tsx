@@ -186,20 +186,27 @@ export default function App() {
     updateState({ step: 8, isProcessing: true, processingLocation: 'server' });
     setIsExporting(true);
 
+    let retryCount = 0;
     const poll = async () => {
         try {
-            const res = await fetch(`/api/jobs/${jobId}`);
+            const res = await fetch(`/api/jobs/${jobId}?t=${Date.now()}`);
             if (!res.ok) {
+                if (res.status >= 500 && retryCount < 5) {
+                    retryCount++;
+                    setTimeout(poll, 2000 * retryCount);
+                    return;
+                }
                 localStorage.removeItem('activeJobId');
                 updateState({ isProcessing: false });
                 setIsExporting(false);
                 return;
             }
             const job = await res.json();
+            retryCount = 0;
 
             if (job.status === 'completed') {
                 setExportProgress(95);
-                const downloadRes = await fetch(`/api/jobs/${jobId}/download`);
+                const downloadRes = await fetch(`/api/jobs/${jobId}/download?t=${Date.now()}`);
                 const blob = await downloadRes.blob();
                 const url = URL.createObjectURL(blob);
 
@@ -220,6 +227,10 @@ export default function App() {
             }
         } catch (e) {
             console.error("Resume Job Error", e);
+            if (retryCount < 5) {
+                retryCount++;
+                setTimeout(poll, 3000);
+            }
         }
     };
     poll();

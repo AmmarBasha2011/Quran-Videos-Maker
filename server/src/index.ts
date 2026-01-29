@@ -32,6 +32,7 @@ interface Job {
     id: string;
     status: 'processing' | 'completed' | 'failed';
     progress: number;
+    statusMsg: string;
     outputPath?: string;
     audioPath?: string;
     error?: string;
@@ -70,6 +71,7 @@ app.post('/api/generate', upload.single('audio'), async (req, res) => {
         id: jobId,
         status: 'processing',
         progress: 0,
+        statusMsg: 'جاري البدء...',
         audioPath: audioFile.path,
         surahName: config.surahName
     };
@@ -84,6 +86,7 @@ app.post('/api/generate', upload.single('audio'), async (req, res) => {
                 const currentJob = jobs.get(jobId);
                 if (currentJob) {
                     currentJob.progress = percent;
+                    currentJob.statusMsg = percent < 10 ? 'جاري التحضير...' : `جاري المعالجة: ${percent}%`;
                 }
             });
 
@@ -91,6 +94,7 @@ app.post('/api/generate', upload.single('audio'), async (req, res) => {
             if (finishedJob) {
                 finishedJob.status = 'completed';
                 finishedJob.progress = 100;
+                finishedJob.statusMsg = 'تم الانتهاء بنجاح';
                 finishedJob.outputPath = outputPath;
             }
             console.log(`Job ${jobId} completed`);
@@ -127,6 +131,7 @@ app.get('/api/jobs/:id', (req, res) => {
         id: job.id,
         status: job.status,
         progress: job.progress,
+        statusMsg: job.statusMsg,
         error: job.error,
         surahName: job.surahName
     });
@@ -158,16 +163,21 @@ app.get('/health', (req, res) => {
   res.send('OK');
 });
 
-app.get('/api/stats', (req, res) => {
+let cachedCpuUsage = 0;
+setInterval(() => {
   osUtils.cpuUsage((v) => {
-    res.json({
-      cpu: Math.round(v * 100),
-      ram: Math.round((1 - os.freemem() / os.totalmem()) * 100),
-      totalRam: Math.round(os.totalmem() / 1024 / 1024 / 1024),
-      freeRam: Math.round(os.freemem() / 1024 / 1024 / 1024),
-      platform: os.platform(),
-      uptime: os.uptime()
-    });
+    cachedCpuUsage = Math.round(v * 100);
+  });
+}, 5000);
+
+app.get('/api/stats', (req, res) => {
+  res.json({
+    cpu: cachedCpuUsage,
+    ram: Math.round((1 - os.freemem() / os.totalmem()) * 100),
+    totalRam: Math.round(os.totalmem() / 1024 / 1024 / 1024),
+    freeRam: Math.round(os.freemem() / 1024 / 1024 / 1024),
+    platform: os.platform(),
+    uptime: os.uptime()
   });
 });
 

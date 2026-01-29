@@ -22,6 +22,7 @@ export const ExportStep: React.FC<Props> = ({ state, isExporting, exportProgress
   const [dhikrIndex, setDhikrIndex] = useState(0);
   const [animateClick, setAnimateClick] = useState(false);
   const [stats, setStats] = useState({ cpu: 0, ram: 0 });
+  const [serverStatus, setServerStatus] = useState<string>('');
 
   useEffect(() => {
     if (!isExporting) {
@@ -36,9 +37,17 @@ export const ExportStep: React.FC<Props> = ({ state, isExporting, exportProgress
       interval = setInterval(async () => {
         if (state.processingLocation === 'server') {
           try {
-            const res = await fetch('/api/stats');
+            const res = await fetch(`/api/stats?t=${Date.now()}`);
             const data = await res.json();
             setStats({ cpu: data.cpu, ram: data.ram });
+
+            // Also update job status message if possible
+            const jobId = localStorage.getItem('activeJobId');
+            if (jobId) {
+              const jobRes = await fetch(`/api/jobs/${jobId}?t=${Date.now()}`);
+              const jobData = await jobRes.json();
+              if (jobData.statusMsg) setServerStatus(jobData.statusMsg);
+            }
           } catch (e) {
             setStats({ cpu: Math.floor(Math.random() * 20) + 40, ram: Math.floor(Math.random() * 10) + 30 });
           }
@@ -170,10 +179,10 @@ export const ExportStep: React.FC<Props> = ({ state, isExporting, exportProgress
             <div className="flex justify-between items-center mb-2">
                <h3 className="text-xl font-bold text-emerald-400 font-rakkas flex items-center gap-2">
                  {state.processingLocation === 'server' ? <Zap className="text-yellow-400 animate-pulse" /> : <Loader2 className="animate-spin" />}
-                 {statusText}
+                 {state.processingLocation === 'server' && serverStatus ? serverStatus : statusText}
                </h3>
                <span className="text-xs text-slate-500 font-mono bg-slate-800/50 px-2 py-1 rounded">
-                 {state.processingLocation === 'server' ? 'SERVER MODE' : 'LOCAL MODE'}
+                 {state.processingLocation === 'server' ? 'السيرفر' : 'الهاتف'}
                </span>
             </div>
             
@@ -201,9 +210,16 @@ export const ExportStep: React.FC<Props> = ({ state, isExporting, exportProgress
             </div>
 
             {/* Resource Meters */}
-            <div className="pt-4 border-t border-slate-800/50 flex gap-6">
-               <StatMeter label="المعالج (CPU)" value={stats.cpu} icon={Cpu} color="bg-blue-500" />
-               <StatMeter label="الذاكرة (RAM)" value={stats.ram} icon={Loader2} color="bg-purple-500" />
+            <div className="pt-4 border-t border-slate-800/50 flex flex-col gap-4">
+               <div className="flex gap-6">
+                 <StatMeter label="المعالج (CPU)" value={stats.cpu} icon={Cpu} color="bg-blue-500" />
+                 <StatMeter label="الذاكرة (RAM)" value={stats.ram} icon={Loader2} color="bg-purple-500" />
+               </div>
+               {state.processingLocation === 'server' && (
+                 <div className="text-[10px] text-emerald-400/60 font-rakkas flex items-center justify-center gap-2 animate-pulse">
+                   <Zap size={10} /> يمكنك إغلاق الصفحة والعودة لاحقاً، المعالجة مستمرة على السيرفر
+                 </div>
+               )}
             </div>
           </div>
 
