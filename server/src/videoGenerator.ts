@@ -48,13 +48,13 @@ export async function generateVideo(audioPath: string, state: any): Promise<stri
 
   // Ensure font exists
   if (!fs.existsSync(fontPath)) {
-      console.log('Downloading Amiri font...');
-      try {
-        const fontResponse = await axios.get('https://github.com/google/fonts/raw/main/ofl/amiri/Amiri-Regular.ttf', { responseType: 'arraybuffer' });
-        fs.writeFileSync(fontPath, fontResponse.data);
-      } catch (e) {
-        console.error('Failed to download font');
-      }
+    console.log('Downloading Amiri font...');
+    try {
+      const fontResponse = await axios.get('https://github.com/google/fonts/raw/main/ofl/amiri/Amiri-Regular.ttf', { responseType: 'arraybuffer' });
+      fs.writeFileSync(fontPath, fontResponse.data);
+    } catch (e) {
+      console.error('Failed to download font');
+    }
   }
   if (fs.existsSync(fontPath)) {
     registerFont(fontPath, { family: 'Amiri' });
@@ -77,24 +77,23 @@ export async function generateVideo(audioPath: string, state: any): Promise<stri
     }
 
     if (asset.type === 'image') {
-        assetMap.set(asset.id, await loadImage(assetPath));
+      assetMap.set(asset.id, await loadImage(assetPath));
     } else {
-        // For videos, extract the first frame as a static background for now
-        const thumbPath = `${assetPath}.jpg`;
-        if (!fs.existsSync(thumbPath)) {
-            await new Promise((resolve, reject) => {
-                ffmpeg(assetPath)
-                    .screenshots({
-                        timestamps: [0],
-                        filename: path.basename(thumbPath),
-                        folder: path.dirname(thumbPath),
-                        size: `${dimensions.width}x${dimensions.height}`
-                    })
-                    .on('end', resolve)
-                    .on('error', reject);
-            });
-        }
-        assetMap.set(asset.id, await loadImage(thumbPath));
+      const thumbPath = `${assetPath}.jpg`;
+      if (!fs.existsSync(thumbPath)) {
+        await new Promise((resolve, reject) => {
+          ffmpeg(assetPath)
+            .screenshots({
+              timestamps: [0],
+              filename: path.basename(thumbPath),
+              folder: path.dirname(thumbPath),
+              size: `${dimensions.width}x${dimensions.height}`
+            })
+            .on('end', resolve)
+            .on('error', reject);
+        });
+      }
+      assetMap.set(asset.id, await loadImage(thumbPath));
     }
   }
 
@@ -117,14 +116,14 @@ export async function generateVideo(audioPath: string, state: any): Promise<stri
     let audioFilters = [];
     if (state.isNormalized) audioFilters.push('loudnorm');
     if (state.reverbAmount > 0) {
-        const delay = 50 + (state.reverbAmount * 100);
-        const decay = 0.3 + (state.reverbAmount * 0.4);
-        audioFilters.push(`aecho=0.8:0.88:${delay}:${decay}`);
+      const delay = 50 + (state.reverbAmount * 100);
+      const decay = 0.3 + (state.reverbAmount * 0.4);
+      audioFilters.push(`aecho=0.8:0.88:${delay}:${decay}`);
     }
     if (state.echoAmount > 0) {
-        const delay = 200 + (state.echoAmount * 300);
-        const decay = 0.2 + (state.echoAmount * 0.3);
-        audioFilters.push(`aecho=0.8:0.9:${delay}:${decay}`);
+      const delay = 200 + (state.echoAmount * 300);
+      const decay = 0.2 + (state.echoAmount * 0.3);
+      audioFilters.push(`aecho=0.8:0.9:${delay}:${decay}`);
     }
 
     const command = ffmpeg()
@@ -142,7 +141,7 @@ export async function generateVideo(audioPath: string, state: any): Promise<stri
       ]);
 
     if (audioFilters.length > 0) {
-        command.audioFilters(audioFilters);
+      command.audioFilters(audioFilters);
     }
 
     command
@@ -160,104 +159,190 @@ export async function generateVideo(audioPath: string, state: any): Promise<stri
     const totalAssetDuration = Math.max(0.1, state.selectedAssets.reduce((acc: number, cur: any) => acc + cur.duration, 0));
 
     const drawText = (text: string, xPct: number, yPct: number, style: any, baseSizeRef: number, scaleFactor: number) => {
-        if (!text) return;
-        const x = (xPct / 100) * dimensions.width;
-        const y = (yPct / 100) * dimensions.height;
-        const finalSize = baseSizeRef * style.fontSizeScale * scaleFactor;
+      if (!text) return;
+      const x = (xPct / 100) * dimensions.width;
+      const y = (yPct / 100) * dimensions.height;
+      const finalSize = baseSizeRef * style.fontSizeScale * scaleFactor;
 
-        ctx.font = `bold ${finalSize}px Amiri`;
-        ctx.fillStyle = style.color;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+      ctx.font = `bold ${finalSize}px Amiri`;
+      ctx.fillStyle = style.color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
 
-        if (style.hasShadow) {
-            ctx.shadowColor = 'rgba(0,0,0,0.9)';
-            ctx.shadowBlur = 4 * scaleFactor;
-            ctx.shadowOffsetX = 2 * scaleFactor;
-            ctx.shadowOffsetY = 2 * scaleFactor;
-        } else {
-            ctx.shadowColor = 'transparent';
-            ctx.shadowBlur = 0;
-        }
-        ctx.fillText(text, x, y);
+      if (style.hasShadow) {
+        ctx.shadowColor = 'rgba(0,0,0,0.9)';
+        ctx.shadowBlur = 4 * scaleFactor;
+        ctx.shadowOffsetX = 2 * scaleFactor;
+        ctx.shadowOffsetY = 2 * scaleFactor;
+      } else {
+        ctx.shadowColor = 'transparent';
         ctx.shadowBlur = 0;
+      }
+      ctx.fillText(text, x, y);
+      ctx.shadowBlur = 0;
+    };
+
+    const drawAssetToCtx = (assetId: string, assetType: string, assetDuration: number, localTime: number, opacity: number) => {
+      const el = assetMap.get(assetId);
+      if (!el) return;
+
+      ctx.globalAlpha = opacity;
+
+      const scale = Math.max(dimensions.width / el.width, dimensions.height / el.height);
+      const x = (dimensions.width / 2) - (el.width / 2) * scale;
+      const y = (dimensions.height / 2) - (el.height / 2) * scale;
+
+      if (assetType === 'image') {
+        const zoom = 1 + (localTime / assetDuration) * 0.05;
+        ctx.save();
+        ctx.translate(dimensions.width / 2, dimensions.height / 2);
+        ctx.scale(zoom, zoom);
+        ctx.translate(-dimensions.width / 2, -dimensions.height / 2);
+        ctx.drawImage(el, x, y, el.width * scale, el.height * scale);
+        ctx.restore();
+      } else {
+        ctx.drawImage(el, x, y, el.width * scale, el.height * scale);
+      }
+      ctx.globalAlpha = 1.0;
     };
 
     const renderFrames = async () => {
-        const minDim = Math.min(dimensions.width, dimensions.height);
-        const scaleFactor = minDim / 1080;
+      const minDim = Math.min(dimensions.width, dimensions.height);
+      const scaleFactor = minDim / 1080;
 
-        for (let frame = 0; frame < totalFrames; frame++) {
-            const currentTime = frame / fps;
-            const loopTime = currentTime % totalAssetDuration;
+      for (let frame = 0; frame < totalFrames; frame++) {
+        const currentTime = frame / fps;
+        const loopTime = currentTime % totalAssetDuration;
 
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, dimensions.width, dimensions.height);
+        // Background
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, dimensions.width, dimensions.height);
 
-            let accumulator = 0;
-            let currentAsset = state.selectedAssets[0];
-            let currentAssetStartTime = 0;
-            for (const asset of state.selectedAssets) {
-                if (loopTime >= accumulator && loopTime < (accumulator + asset.duration)) {
-                    currentAsset = asset;
-                    currentAssetStartTime = accumulator;
-                    break;
-                }
-                accumulator += asset.duration;
-            }
+        // Asset Selection & Crossfade
+        let accumulator = 0;
+        let currentAsset = state.selectedAssets[0];
+        let nextAsset = null;
+        let currentAssetStartTime = 0;
 
-            const assetImg = assetMap.get(currentAsset.id);
-            if (assetImg && assetImg.width) {
-                const scale = Math.max(dimensions.width / assetImg.width, dimensions.height / assetImg.height);
-                const x = (dimensions.width / 2) - (assetImg.width / 2) * scale;
-                const y = (dimensions.height / 2) - (assetImg.height / 2) * scale;
-
-                if (currentAsset.type === 'image') {
-                    const localTime = loopTime - currentAssetStartTime;
-                    const zoom = 1 + (localTime / currentAsset.duration) * 0.05;
-                    ctx.save();
-                    ctx.translate(dimensions.width/2, dimensions.height/2);
-                    ctx.scale(zoom, zoom);
-                    ctx.translate(-dimensions.width/2, -dimensions.height/2);
-                    ctx.drawImage(assetImg, x, y, assetImg.width * scale, assetImg.height * scale);
-                    ctx.restore();
-                } else {
-                    ctx.drawImage(assetImg, x, y, assetImg.width * scale, assetImg.height * scale);
-                }
-            }
-
-            ctx.fillStyle = 'rgba(0,0,0,0.3)';
-            ctx.fillRect(0, 0, dimensions.width, dimensions.height);
-
-            drawText(state.surahName, state.surahPosition.x, state.surahPosition.y, state.surahStyle, 120, scaleFactor);
-            drawText(state.readerName, state.readerPosition.x, state.readerPosition.y, state.readerStyle, 60, scaleFactor);
-
-            const qConfig = state.quranConfig;
-            if (qConfig.isEnabled && qConfig.timings.length > 0) {
-                const activeVerse = qConfig.timings.find((t: any) => currentTime >= t.startTime && currentTime < t.endTime);
-                if (activeVerse) {
-                    const style = qConfig.style;
-                    const x = (qConfig.position.x / 100) * dimensions.width;
-                    const y = (qConfig.position.y / 100) * dimensions.height;
-                    const fontSize = 140 * style.fontSizeScale * scaleFactor;
-
-                    ctx.font = `${fontSize}px Amiri`;
-                    ctx.fillStyle = style.color;
-                    ctx.fillText(activeVerse.text, x, y);
-                }
-            }
-
-            const buffer = canvas.toBuffer('image/jpeg', { quality: 0.7 });
-            const success = inputStream.write(buffer);
-            if (!success) {
-                await new Promise(r => inputStream.once('drain', r));
-            }
-
-            if (frame % 500 === 0) {
-                console.log(`Rendered frame ${frame}/${totalFrames} (${Math.round(frame/totalFrames*100)}%)`);
-            }
+        for (let i = 0; i < state.selectedAssets.length; i++) {
+          const asset = state.selectedAssets[i];
+          if (loopTime >= accumulator && loopTime < (accumulator + asset.duration)) {
+            currentAsset = asset;
+            currentAssetStartTime = accumulator;
+            nextAsset = state.selectedAssets[(i + 1) % state.selectedAssets.length];
+            break;
+          }
+          accumulator += asset.duration;
         }
-        inputStream.end();
+
+        const assetLocalTime = loopTime - currentAssetStartTime;
+        const timeRemainingInAsset = currentAsset.duration - assetLocalTime;
+        const transDuration = 1.0;
+
+        drawAssetToCtx(currentAsset.id, currentAsset.type, currentAsset.duration, assetLocalTime, 1.0);
+
+        if (state.globalStyle.transitionType === 'fade' && timeRemainingInAsset <= transDuration && nextAsset) {
+          const opacity = 1 - (timeRemainingInAsset / transDuration);
+          drawAssetToCtx(nextAsset.id, nextAsset.type, nextAsset.duration, 0, opacity);
+        }
+
+        // Dark Overlay
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fillRect(0, 0, dimensions.width, dimensions.height);
+
+        if (!state.forceNoText) {
+          // Titles
+          drawText(state.surahName, state.surahPosition.x, state.surahPosition.y, state.surahStyle, 120, scaleFactor);
+          drawText(state.readerName, state.readerPosition.x, state.readerPosition.y, state.readerStyle, 60, scaleFactor);
+
+          // Quran Verses with Word Wrapping & Animations
+          const qConfig = state.quranConfig;
+          if (qConfig.isEnabled && qConfig.timings && qConfig.timings.length > 0) {
+            // Find all active verses (usually just one, but handle multiple if they overlap)
+            const activeVerses = qConfig.timings.filter((t: any) => currentTime >= t.startTime && currentTime < t.endTime);
+
+            activeVerses.forEach((activeVerse: any) => {
+              const style = qConfig.style;
+              const x = (qConfig.position.x / 100) * dimensions.width;
+              const y = (qConfig.position.y / 100) * dimensions.height;
+              const fontSize = 140 * style.fontSizeScale * scaleFactor;
+
+              const animType = state.globalStyle.textAnimation;
+              const timeSinceStart = currentTime - activeVerse.startTime;
+              const timeUntilEnd = activeVerse.endTime - currentTime;
+              const animDuration = 0.6;
+
+              let opacity = 1.0;
+              if (animType === 'fade') {
+                if (timeSinceStart < animDuration) opacity = timeSinceStart / animDuration;
+                else if (timeUntilEnd < animDuration) opacity = timeUntilEnd / animDuration;
+              } else if (animType === 'slideUp') {
+                if (timeSinceStart < animDuration) opacity = timeSinceStart / animDuration;
+                else if (timeUntilEnd < animDuration) opacity = timeUntilEnd / animDuration;
+              }
+
+              if (opacity > 0) {
+                ctx.save();
+                ctx.globalAlpha = opacity;
+
+                ctx.font = `bold ${fontSize}px Amiri`;
+                ctx.fillStyle = style.color;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.direction = 'rtl';
+
+                if (style.hasShadow) {
+                  ctx.shadowColor = 'rgba(0,0,0,0.9)';
+                  ctx.shadowBlur = 4 * scaleFactor;
+                  ctx.shadowOffsetX = 2 * scaleFactor;
+                  ctx.shadowOffsetY = 2 * scaleFactor;
+                }
+
+                const words = activeVerse.text.split(' ');
+                const maxWidth = dimensions.width * 0.8;
+                const lines = [];
+                let currentLineWords = [];
+                let currentLineWidth = 0;
+
+                for (const word of words) {
+                  const wordWidth = ctx.measureText(word + ' ').width;
+                  if (currentLineWidth + wordWidth < maxWidth) {
+                    currentLineWords.push(word);
+                    currentLineWidth += wordWidth;
+                  } else {
+                    lines.push(currentLineWords.join(' '));
+                    currentLineWords = [word];
+                    currentLineWidth = wordWidth;
+                  }
+                }
+                if (currentLineWords.length > 0) lines.push(currentLineWords.join(' '));
+
+                const lineHeight = fontSize * 1.6;
+                const totalHeight = lines.length * lineHeight;
+                let startY = y - (totalHeight / 2) + (lineHeight / 2);
+
+                lines.forEach((line) => {
+                  ctx.fillText(line, x, startY);
+                  startY += lineHeight;
+                });
+
+                ctx.restore();
+              }
+            });
+          }
+        }
+
+        const buffer = canvas.toBuffer('image/jpeg', { quality: 0.7 });
+        const success = inputStream.write(buffer);
+        if (!success) {
+          await new Promise(r => inputStream.once('drain', r));
+        }
+
+        if (frame % 500 === 0) {
+          console.log(`Rendered frame ${frame}/${totalFrames} (${Math.round(frame / totalFrames * 100)}%)`);
+        }
+      }
+      inputStream.end();
     };
 
     renderFrames().catch(reject);

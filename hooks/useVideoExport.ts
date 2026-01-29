@@ -39,7 +39,12 @@ export const useVideoExport = () => {
             formData.append('audio', state.audioFile!);
 
             // Clean up state for transmission (avoid circular refs or huge data if any)
-            const config = { ...state, audioFile: null, audioUrl: null };
+            const config = {
+                ...state,
+                audioFile: null,
+                audioUrl: null,
+                forceNoText // Pass this to server
+            };
             formData.append('config', JSON.stringify(config));
 
             const response = await fetch('/api/generate', {
