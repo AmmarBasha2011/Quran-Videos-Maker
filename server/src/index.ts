@@ -5,6 +5,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import dotenv from 'dotenv';
+import os from 'os';
+import osUtils from 'os-utils';
 import { generateVideo } from './videoGenerator.js';
 
 dotenv.config();
@@ -81,6 +83,19 @@ app.post('/api/generate', upload.single('audio'), async (req, res) => {
 
 app.get('/health', (req, res) => {
   res.send('OK');
+});
+
+app.get('/api/stats', (req, res) => {
+  osUtils.cpuUsage((v) => {
+    res.json({
+      cpu: Math.round(v * 100),
+      ram: Math.round((1 - os.freemem() / os.totalmem()) * 100),
+      totalRam: Math.round(os.totalmem() / 1024 / 1024 / 1024),
+      freeRam: Math.round(os.freemem() / 1024 / 1024 / 1024),
+      platform: os.platform(),
+      uptime: os.uptime()
+    });
+  });
 });
 
 // Fallback to index.html for SPA

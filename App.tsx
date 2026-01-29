@@ -307,8 +307,13 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-200 selection:bg-emerald-500/30 font-amiri" dir="rtl">
+    <div className="min-h-screen text-slate-200 selection:bg-emerald-500/30 font-amiri" dir="rtl">
       
+      <div className="bg-liquid">
+        <div className="blob" style={{ top: '-10%', left: '-10%' }}></div>
+        <div className="blob" style={{ bottom: '-10%', right: '-10%', background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)' }}></div>
+      </div>
+
       <DocumentationModal isOpen={showDocs} onClose={closeDocs} />
 
       <Header 
@@ -325,7 +330,7 @@ export default function App() {
       <main className="max-w-4xl mx-auto p-4 md:p-6 relative pb-24 md:pb-6">
         <StepWizard currentStep={state.step} />
 
-        <div className="bg-slate-900/50 border border-slate-800/50 backdrop-blur-sm rounded-2xl p-4 md:p-8 min-h-[500px] shadow-2xl relative overflow-hidden flex flex-col">
+        <div className="liquid-glass p-4 md:p-8 min-h-[500px] flex flex-col">
           
           {state.step === 1 && (
             <DetailsStep 
