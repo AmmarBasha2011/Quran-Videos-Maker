@@ -201,8 +201,8 @@ export const useVideoExport = () => {
         sourceNode.buffer = renderedAudioBuffer;
         sourceNode.connect(dest);
         
-        // Limit FPS on mobile to prevent crashes
-        const captureFps = Math.min(30, state.fps); 
+        // Limit FPS to 120. Higher FPS needs more resources.
+        const captureFps = Math.min(120, state.fps);
         const canvasStream = canvas.captureStream(captureFps);
         
         const combinedStream = new MediaStream([
@@ -230,8 +230,9 @@ export const useVideoExport = () => {
             '360p': 1_500_000, '480p': 2_500_000, '720p': 4_000_000, 
             '1080p': 6_000_000, '2K': 10_000_000, '4K': 20_000_000, '8K': 30_000_000
         };
-        // Reduce bitrate slightly for mobile stability
-        const targetBitrate = baseBitrates[state.resolution] || 5_000_000;
+        // Increase bitrate for high FPS
+        let targetBitrate = baseBitrates[state.resolution] || 5_000_000;
+        if (captureFps > 30) targetBitrate *= (captureFps / 30);
 
         const recorder = new MediaRecorder(combinedStream, {
             mimeType: selectedMimeType,

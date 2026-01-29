@@ -109,7 +109,7 @@ export async function generateVideo(
     });
   });
 
-  const fps = Math.min(state.fps || 30, 30);
+  const fps = Math.min(state.fps || 30, 120);
   const totalFrames = Math.ceil(audioDuration * fps);
 
   const canvas = createCanvas(dimensions.width, dimensions.height);
@@ -139,6 +139,7 @@ export async function generateVideo(
         '-c:v libx264',
         '-pix_fmt yuv420p',
         '-preset ultrafast',
+        '-crf 18',
         '-c:a aac',
         '-shortest',
         '-movflags +faststart'
@@ -172,6 +173,7 @@ export async function generateVideo(
       ctx.fillStyle = style.color;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
+      ctx.direction = 'rtl';
 
       if (style.hasShadow) {
         ctx.shadowColor = 'rgba(0,0,0,0.9)';
@@ -196,17 +198,14 @@ export async function generateVideo(
       const x = (dimensions.width / 2) - (el.width / 2) * scale;
       const y = (dimensions.height / 2) - (el.height / 2) * scale;
 
-      if (assetType === 'image') {
-        const zoom = 1 + (localTime / assetDuration) * 0.05;
-        ctx.save();
-        ctx.translate(dimensions.width / 2, dimensions.height / 2);
-        ctx.scale(zoom, zoom);
-        ctx.translate(-dimensions.width / 2, -dimensions.height / 2);
-        ctx.drawImage(el, x, y, el.width * scale, el.height * scale);
-        ctx.restore();
-      } else {
-        ctx.drawImage(el, x, y, el.width * scale, el.height * scale);
-      }
+      // Apply Ken Burns effect to all static backgrounds (including video thumbs)
+      const zoom = 1 + (localTime / assetDuration) * 0.05;
+      ctx.save();
+      ctx.translate(dimensions.width / 2, dimensions.height / 2);
+      ctx.scale(zoom, zoom);
+      ctx.translate(-dimensions.width / 2, -dimensions.height / 2);
+      ctx.drawImage(el, x, y, el.width * scale, el.height * scale);
+      ctx.restore();
       ctx.globalAlpha = 1.0;
     };
 
@@ -266,77 +265,96 @@ export async function generateVideo(
             const activeVerses = qConfig.timings.filter((t: any) => currentTime >= t.startTime && currentTime < t.endTime);
 
             activeVerses.forEach((activeVerse: any) => {
-              const style = qConfig.style;
-              const x = (qConfig.position.x / 100) * dimensions.width;
-              const y = (qConfig.position.y / 100) * dimensions.height;
-              const fontSize = 140 * style.fontSizeScale * scaleFactor;
+                    const style = qConfig.style;
+                    const x = (qConfig.position.x / 100) * dimensions.width;
+                    const y = (qConfig.position.y / 100) * dimensions.height;
+                    const fontSize = 140 * style.fontSizeScale * scaleFactor;
 
-              const animType = state.globalStyle.textAnimation;
-              const timeSinceStart = currentTime - activeVerse.startTime;
-              const timeUntilEnd = activeVerse.endTime - currentTime;
-              const animDuration = 0.6;
+                    const animType = state.globalStyle.textAnimation;
+                    const timeSinceStart = currentTime - activeVerse.startTime;
+                    const timeUntilEnd = activeVerse.endTime - currentTime;
+                    const animDuration = 0.6;
 
-              let opacity = 1.0;
-              if (animType === 'fade') {
-                if (timeSinceStart < animDuration) opacity = timeSinceStart / animDuration;
-                else if (timeUntilEnd < animDuration) opacity = timeUntilEnd / animDuration;
-              } else if (animType === 'slideUp') {
-                if (timeSinceStart < animDuration) opacity = timeSinceStart / animDuration;
-                else if (timeUntilEnd < animDuration) opacity = timeUntilEnd / animDuration;
-              }
+                    let opacity = 1.0;
+                    if (animType === 'fade') {
+                        if (timeSinceStart < animDuration) opacity = timeSinceStart / animDuration;
+                        else if (timeUntilEnd < animDuration) opacity = timeUntilEnd / animDuration;
+                    } else if (animType === 'slideUp') {
+                        if (timeSinceStart < animDuration) opacity = timeSinceStart / animDuration;
+                        else if (timeUntilEnd < animDuration) opacity = timeUntilEnd / animDuration;
+                    }
 
-              if (opacity > 0) {
-                ctx.save();
-                ctx.globalAlpha = opacity;
+                    if (opacity > 0) {
+                        ctx.save();
+                        ctx.globalAlpha = opacity;
 
-                ctx.font = `bold ${fontSize}px Amiri`;
-                ctx.fillStyle = style.color;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.direction = 'rtl';
+                        ctx.font = `bold ${fontSize}px Amiri`;
+                        ctx.direction = 'rtl';
+                        if (style.hasShadow) {
+                            ctx.shadowColor = 'rgba(0,0,0,0.9)';
+                            ctx.shadowBlur = 4 * scaleFactor;
+                            ctx.shadowOffsetX = 2 * scaleFactor;
+                            ctx.shadowOffsetY = 2 * scaleFactor;
+                        }
 
-                if (style.hasShadow) {
-                  ctx.shadowColor = 'rgba(0,0,0,0.9)';
-                  ctx.shadowBlur = 4 * scaleFactor;
-                  ctx.shadowOffsetX = 2 * scaleFactor;
-                  ctx.shadowOffsetY = 2 * scaleFactor;
-                }
+                        const words = activeVerse.text.split(' ');
+                        const maxWidth = dimensions.width * 0.8;
+                        const lines: any[] = [];
+                        let currentLineWords: string[] = [];
+                        let currentLineWidth = 0;
+                        let lineStartWordIndex = 0;
 
-                const words = activeVerse.text.split(' ');
-                const maxWidth = dimensions.width * 0.8;
-                const lines = [];
-                let currentLineWords = [];
-                let currentLineWidth = 0;
+                        for (const word of words) {
+                            const wordWidth = ctx.measureText(word + ' ').width;
+                            if (currentLineWidth + wordWidth < maxWidth) {
+                                currentLineWords.push(word);
+                                currentLineWidth += wordWidth;
+                            } else {
+                                lines.push({ text: currentLineWords.join(' '), words: currentLineWords, startIndex: lineStartWordIndex });
+                                lineStartWordIndex += currentLineWords.length;
+                                currentLineWords = [word];
+                                currentLineWidth = wordWidth;
+                            }
+                        }
+                        if (currentLineWords.length > 0) {
+                            lines.push({ text: currentLineWords.join(' '), words: currentLineWords, startIndex: lineStartWordIndex });
+                        }
 
-                for (const word of words) {
-                  const wordWidth = ctx.measureText(word + ' ').width;
-                  if (currentLineWidth + wordWidth < maxWidth) {
-                    currentLineWords.push(word);
-                    currentLineWidth += wordWidth;
-                  } else {
-                    lines.push(currentLineWords.join(' '));
-                    currentLineWords = [word];
-                    currentLineWidth = wordWidth;
-                  }
-                }
-                if (currentLineWords.length > 0) lines.push(currentLineWords.join(' '));
+                        const lineHeight = fontSize * 1.6;
+                        const totalHeight = lines.length * lineHeight;
+                        let startY = y - (totalHeight / 2) + (lineHeight / 2);
 
-                const lineHeight = fontSize * 1.6;
-                const totalHeight = lines.length * lineHeight;
-                let startY = y - (totalHeight / 2) + (lineHeight / 2);
+                        lines.forEach((line) => {
+                            const lineWidth = ctx.measureText(line.text).width;
+                            let cursorX = x + (lineWidth / 2);
 
-                lines.forEach((line) => {
-                  ctx.fillText(line, x, startY);
-                  startY += lineHeight;
+                            line.words.forEach((word: string, localIndex: number) => {
+                                const wWidth = ctx.measureText(word + ' ').width;
+                                const actualWordIndex = line.startIndex + localIndex;
+
+                                let highlight = qConfig.highlights.find((h: any) => h.verseIndex === activeVerse.verseIndex && h.wordIndex === actualWordIndex);
+                                const cleanWord = word.replace(/[\u064B-\u065F]/g, '');
+                                if (!highlight) {
+                                    const autoH = state.globalStyle.autoHighlights.find((ah: any) => cleanWord.includes(ah.word) || word.includes(ah.word));
+                                    if (autoH) highlight = { verseIndex: -1, wordIndex: -1, color: autoH.color };
+                                }
+
+                                ctx.fillStyle = highlight ? highlight.color : style.color;
+                                ctx.textAlign = 'right';
+                                ctx.direction = 'rtl';
+                                ctx.fillText(word + ' ', cursorX, startY);
+                                cursorX -= wWidth;
+                            });
+                            startY += lineHeight;
+                        });
+
+                        ctx.restore();
+                    }
                 });
-
-                ctx.restore();
-              }
-            });
           }
         }
 
-        const buffer = canvas.toBuffer('image/jpeg', { quality: 0.7 });
+        const buffer = canvas.toBuffer('image/jpeg', { quality: 0.8 });
         const success = inputStream.write(buffer);
         if (!success) {
           await new Promise(r => inputStream.once('drain', r));
