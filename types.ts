@@ -97,6 +97,7 @@ export interface QuranConfig {
 
 export interface AppState {
   step: number;
+  processingLocation: 'local' | 'server';
   
   // Video Configuration
   aspectRatio: AspectRatio;

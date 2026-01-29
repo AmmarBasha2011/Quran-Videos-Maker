@@ -27,6 +27,7 @@ export default function App() {
   // --- Global State ---
   const [state, setState] = useState<AppState>({
     step: 1,
+    processingLocation: 'local',
     readerName: '',
     surahName: '',
     
@@ -395,6 +396,7 @@ export default function App() {
               exportProgress={exportProgress}
               generatedVideoUrl={generatedVideoUrl}
               generatedNoTextUrl={generatedNoTextUrl}
+              onUpdateState={updateState}
               onGenerate={handleGenerate}
               onReset={() => {
                 setGeneratedVideoUrl(null);

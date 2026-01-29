@@ -79,7 +79,22 @@ export async function generateVideo(audioPath: string, state: any): Promise<stri
     if (asset.type === 'image') {
         assetMap.set(asset.id, await loadImage(assetPath));
     } else {
-        assetMap.set(asset.id, { type: 'video', path: assetPath });
+        // For videos, extract the first frame as a static background for now
+        const thumbPath = `${assetPath}.jpg`;
+        if (!fs.existsSync(thumbPath)) {
+            await new Promise((resolve, reject) => {
+                ffmpeg(assetPath)
+                    .screenshots({
+                        timestamps: [0],
+                        filename: path.basename(thumbPath),
+                        folder: path.dirname(thumbPath),
+                        size: `${dimensions.width}x${dimensions.height}`
+                    })
+                    .on('end', resolve)
+                    .on('error', reject);
+            });
+        }
+        assetMap.set(asset.id, await loadImage(thumbPath));
     }
   }
 

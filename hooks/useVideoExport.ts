@@ -32,6 +32,41 @@ export const useVideoExport = () => {
     setIsExporting(true);
     setExportProgress(0);
 
+    if (state.processingLocation === 'server') {
+        try {
+            setExportProgress(10);
+            const formData = new FormData();
+            formData.append('audio', state.audioFile!);
+
+            // Clean up state for transmission (avoid circular refs or huge data if any)
+            const config = { ...state, audioFile: null, audioUrl: null };
+            formData.append('config', JSON.stringify(config));
+
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Server error');
+            }
+
+            setExportProgress(90);
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+
+            setIsExporting(false);
+            setExportProgress(100);
+            onComplete(url);
+            return;
+        } catch (error) {
+            console.error("Server Export Error:", error);
+            alert("حدث خطأ في المعالجة على السيرفر. جاري المحاولة محلياً...");
+            // Fallback to local
+        }
+    }
+
     try {
         // 1. Setup Canvas
         const canvas = document.createElement('canvas');

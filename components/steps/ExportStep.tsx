@@ -11,6 +11,7 @@ interface Props {
   generatedNoTextUrl: string | null; // New prop for second video
   onGenerate: () => void;
   onReset: () => void;
+  onUpdateState: (updates: Partial<AppState>) => void;
 }
 
 const DHIKR_LIST = ['سُبْحَانَ اللَّهِ', 'الْحَمْدُ لِلَّهِ', 'لَا إِلَهَ إِلَّا اللَّهُ', 'اللَّهُ أَكْبَرُ'];
@@ -61,12 +62,33 @@ export const ExportStep: React.FC<Props> = ({ state, isExporting, exportProgress
               <span className="bg-slate-800 px-2 py-1 rounded border border-slate-700 uppercase">{state.format || 'MP4'}</span>
             </div>
             {state.quranConfig.generateNoTextVariant && (
-                <div className="text-xs text-emerald-400 bg-emerald-900/20 p-2 rounded border border-emerald-900/50 max-w-xs mx-auto mb-2">
+                <div className="text-xs text-emerald-400 bg-emerald-900/20 p-2 rounded border border-emerald-900/50 max-w-xs mx-auto mb-4">
                     سيتم إنشاء نسختين: واحدة بالآيات وأخرى بدونها.
                 </div>
             )}
-            <p className="text-slate-400 max-w-sm mx-auto text-sm">
-              سيتم إنشاء الفيديو بأقصى جودة ممكنة. قد تستغرق العملية بعض الوقت خاصة مع دقة 4K.
+
+            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mb-6 max-w-xs mx-auto">
+              <label className="text-sm text-slate-300 block mb-3 font-rakkas">مكان المعالجة (نوصي بالسيرفر للدقة العالية)</label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onUpdateState({ processingLocation: 'local' })}
+                  className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${state.processingLocation === 'local' ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
+                >
+                  الهاتف (بطيء)
+                </button>
+                <button
+                  onClick={() => onUpdateState({ processingLocation: 'server' })}
+                  className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${state.processingLocation === 'server' ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
+                >
+                  السيرفر (سريع)
+                </button>
+              </div>
+            </div>
+
+            <p className="text-slate-400 max-w-sm mx-auto text-sm mb-4">
+              {state.processingLocation === 'server'
+                ? "سيتم إرسال الملفات للسيرفر لمعالجتها بأقصى سرعة ودقة."
+                : "سيتم إنشاء الفيديو محلياً على جهازك. قد يكون هذا بطيئاً في الدقة العالية."}
             </p>
           </div>
           <button 
