@@ -40,7 +40,11 @@ const fontsDir = path.join(__dirname, '../fonts');
 if (!fs.existsSync(fontsDir)) fs.mkdirSync(fontsDir, { recursive: true });
 const fontPath = path.join(fontsDir, 'Amiri-Regular.ttf');
 
-export async function generateVideo(audioPath: string, state: any): Promise<string> {
+export async function generateVideo(
+  audioPath: string,
+  state: any,
+  onProgress?: (percent: number) => void
+): Promise<string> {
   const dimensions = getDimensions(state.resolution, state.aspectRatio);
   const outputDir = path.join(__dirname, '../temp/output');
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
@@ -338,8 +342,10 @@ export async function generateVideo(audioPath: string, state: any): Promise<stri
           await new Promise(r => inputStream.once('drain', r));
         }
 
-        if (frame % 500 === 0) {
-          console.log(`Rendered frame ${frame}/${totalFrames} (${Math.round(frame / totalFrames * 100)}%)`);
+            if (frame % 100 === 0) {
+              const percent = Math.round((frame / totalFrames) * 100);
+              console.log(`Rendered frame ${frame}/${totalFrames} (${percent}%)`);
+              if (onProgress) onProgress(percent);
         }
       }
       inputStream.end();

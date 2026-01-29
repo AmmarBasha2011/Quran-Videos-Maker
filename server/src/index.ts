@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import os from 'os';
 import osUtils from 'os-utils';
 import { generateVideo } from './videoGenerator.js';
+import { v4 as uuidv4 } from 'uuid';
 
 dotenv.config();
 
@@ -25,6 +26,19 @@ const distPath = path.join(__dirname, '../../dist');
 if (fs.existsSync(distPath)) {
     app.use(express.static(distPath));
 }
+
+// In-memory job store
+interface Job {
+    id: string;
+    status: 'processing' | 'completed' | 'failed';
+    progress: number;
+    outputPath?: string;
+    audioPath?: string;
+    error?: string;
+    surahName: string;
+}
+
+const jobs = new Map<string, Job>();
 
 // Setup storage for uploads
 const storage = multer.diskStorage({
@@ -51,34 +65,93 @@ app.post('/api/generate', upload.single('audio'), async (req, res) => {
       return res.status(400).json({ error: 'Audio file is required' });
     }
 
-    console.log('Starting video generation for:', config.surahName);
+    const jobId = uuidv4();
+    const job: Job = {
+        id: jobId,
+        status: 'processing',
+        progress: 0,
+        audioPath: audioFile.path,
+        surahName: config.surahName
+    };
+    jobs.set(jobId, job);
 
-    let outputPath: string | null = null;
-    try {
-        outputPath = await generateVideo(audioFile.path, config);
-        res.download(outputPath, (err) => {
-            // Cleanup files after download or error
+    console.log(`Job ${jobId} started for: ${config.surahName}`);
+
+    // Run processing in background
+    (async () => {
+        try {
+            const outputPath = await generateVideo(audioFile.path, config, (percent) => {
+                const currentJob = jobs.get(jobId);
+                if (currentJob) {
+                    currentJob.progress = percent;
+                }
+            });
+
+            const finishedJob = jobs.get(jobId);
+            if (finishedJob) {
+                finishedJob.status = 'completed';
+                finishedJob.progress = 100;
+                finishedJob.outputPath = outputPath;
+            }
+            console.log(`Job ${jobId} completed`);
+        } catch (error) {
+            console.error(`Job ${jobId} failed:`, error);
+            const failedJob = jobs.get(jobId);
+            if (failedJob) {
+                failedJob.status = 'failed';
+                failedJob.error = (error as Error).message;
+            }
+            // Cleanup audio if generation fails
             try {
                 if (fs.existsSync(audioFile.path)) fs.unlinkSync(audioFile.path);
-                if (outputPath && fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+            } catch (cleanupErr) {
+                console.error('Cleanup error after gen failure:', cleanupErr);
+            }
+        }
+    })();
+
+    res.json({ jobId });
+
+  } catch (error) {
+    console.error('Initial generation error:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: (error as Error).message });
+  }
+});
+
+app.get('/api/jobs/:id', (req, res) => {
+    const job = jobs.get(req.params.id);
+    if (!job) {
+        return res.status(404).json({ error: 'Job not found' });
+    }
+    res.json({
+        id: job.id,
+        status: job.status,
+        progress: job.progress,
+        error: job.error,
+        surahName: job.surahName
+    });
+});
+
+app.get('/api/jobs/:id/download', (req, res) => {
+    const job = jobs.get(req.params.id);
+    if (!job || job.status !== 'completed' || !job.outputPath) {
+        return res.status(404).json({ error: 'Video not ready or job not found' });
+    }
+
+    res.download(job.outputPath, (err) => {
+        if (err) {
+            console.error('Download error:', err);
+        } else {
+            // Cleanup after successful download
+            try {
+                if (job.audioPath && fs.existsSync(job.audioPath)) fs.unlinkSync(job.audioPath);
+                if (job.outputPath && fs.existsSync(job.outputPath)) fs.unlinkSync(job.outputPath);
+                jobs.delete(job.id);
             } catch (cleanupErr) {
                 console.error('Cleanup error:', cleanupErr);
             }
-            if (err) console.error('Download error:', err);
-        });
-    } catch (genError) {
-        // Cleanup audio if generation fails
-        try {
-            if (fs.existsSync(audioFile.path)) fs.unlinkSync(audioFile.path);
-        } catch (cleanupErr) {
-            console.error('Cleanup error after gen failure:', cleanupErr);
         }
-        throw genError;
-    }
-  } catch (error) {
-    console.error('Generation error:', error);
-    res.status(500).json({ error: 'Internal Server Error', details: (error as Error).message });
-  }
+    });
 });
 
 app.get('/health', (req, res) => {

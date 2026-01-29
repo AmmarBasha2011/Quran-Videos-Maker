@@ -126,7 +126,9 @@ export default function App() {
     normalize: state.isNormalized
   });
 
-  const { isExporting, exportProgress, generateVideo } = useVideoExport();
+  const {
+    isExporting, setIsExporting, exportProgress, setExportProgress, generateVideo
+  } = useVideoExport();
 
   // --- Effects ---
   useEffect(() => {
@@ -136,6 +138,7 @@ export default function App() {
     const savedHistory = localStorage.getItem('videoHistory');
     const savedKeys = localStorage.getItem('geminiApiKeys'); 
     const hasSeenDocs = localStorage.getItem('hasSeenDocs');
+    const activeJobId = localStorage.getItem('activeJobId');
     
     let parsedPresets: AudioPreset[] = [];
     if (savedCustomPresets) {
@@ -173,7 +176,54 @@ export default function App() {
         setShowDocs(true);
     }
 
+    if (activeJobId) {
+        resumeJob(activeJobId);
+    }
+
   }, []);
+
+  const resumeJob = async (jobId: string) => {
+    updateState({ step: 8, isProcessing: true, processingLocation: 'server' });
+    setIsExporting(true);
+
+    const poll = async () => {
+        try {
+            const res = await fetch(`/api/jobs/${jobId}`);
+            if (!res.ok) {
+                localStorage.removeItem('activeJobId');
+                updateState({ isProcessing: false });
+                setIsExporting(false);
+                return;
+            }
+            const job = await res.json();
+
+            if (job.status === 'completed') {
+                setExportProgress(95);
+                const downloadRes = await fetch(`/api/jobs/${jobId}/download`);
+                const blob = await downloadRes.blob();
+                const url = URL.createObjectURL(blob);
+
+                localStorage.removeItem('activeJobId');
+                setGeneratedVideoUrl(url);
+                updateState({ isProcessing: false });
+                setIsExporting(false);
+                setExportProgress(100);
+                addToHistory();
+            } else if (job.status === 'failed') {
+                localStorage.removeItem('activeJobId');
+                updateState({ isProcessing: false });
+                setIsExporting(false);
+                alert("فشلت المعالجة السابقة على السيرفر");
+            } else {
+                setExportProgress(job.progress);
+                setTimeout(poll, 3000);
+            }
+        } catch (e) {
+            console.error("Resume Job Error", e);
+        }
+    };
+    poll();
+  };
 
   // Time Estimation Effect
   useEffect(() => {

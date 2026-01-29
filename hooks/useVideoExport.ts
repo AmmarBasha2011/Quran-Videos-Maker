@@ -57,13 +57,34 @@ export const useVideoExport = () => {
                 throw new Error(err.error || 'Server error');
             }
 
-            setExportProgress(90);
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
+            const { jobId } = await response.json();
+            localStorage.setItem('activeJobId', jobId);
 
-            setIsExporting(false);
-            setExportProgress(100);
-            onComplete(url);
+            // Polling
+            const poll = async () => {
+                const res = await fetch(`/api/jobs/${jobId}`);
+                if (!res.ok) throw new Error("Job tracking failed");
+                const job = await res.json();
+
+                if (job.status === 'completed') {
+                    setExportProgress(95);
+                    const downloadRes = await fetch(`/api/jobs/${jobId}/download`);
+                    const blob = await downloadRes.blob();
+                    const url = URL.createObjectURL(blob);
+
+                    localStorage.removeItem('activeJobId');
+                    setIsExporting(false);
+                    setExportProgress(100);
+                    onComplete(url);
+                } else if (job.status === 'failed') {
+                    throw new Error(job.error || "Server processing failed");
+                } else {
+                    setExportProgress(job.progress);
+                    setTimeout(poll, 3000);
+                }
+            };
+
+            poll();
             return;
         } catch (error) {
             console.error("Server Export Error:", error);
@@ -483,5 +504,5 @@ export const useVideoExport = () => {
 
   }, []);
 
-  return { isExporting, exportProgress, generateVideo };
+  return { isExporting, setIsExporting, exportProgress, setExportProgress, generateVideo };
 };
