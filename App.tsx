@@ -247,9 +247,9 @@ export default function App() {
       if ((window as any).__HEADLESS_CONFIG__ && generatedVideoUrl) {
           console.log("Export complete, notifying parent...");
           (window as any).generatedVideoUrl = generatedVideoUrl;
-          (window as any).onExportComplete?.(generatedVideoUrl);
+          (window as any).onExportComplete?.(generatedVideoUrl, generatedExtension);
       }
-  }, [generatedVideoUrl]);
+  }, [generatedVideoUrl, generatedExtension]);
 
   useEffect(() => {
     if (state.mode === 'upload' && state.step !== 4 && isPlaying) {

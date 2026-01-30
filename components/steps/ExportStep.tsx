@@ -39,6 +39,8 @@ export const ExportStep: React.FC<Props> = ({ state, isExporting, exportProgress
   // Use the actual extension returned by the recording process
   const extension = generatedExtension || state.format || 'mp4';
 
+  const hasLocalAssets = state.selectedAssets.some(a => a.url.startsWith('blob:'));
+
   let statusText = "جاري إنشاء الفيديو...";
   if (state.quranConfig.generateNoTextVariant && generatedVideoUrl && !generatedNoTextUrl) {
       statusText = "جاري إنشاء النسخة الثانية (بدون نصوص)...";
@@ -88,9 +90,16 @@ export const ExportStep: React.FC<Props> = ({ state, isExporting, exportProgress
                     </button>
                 </div>
                 {state.processingMode === 'server' ? (
-                    <p className="text-[10px] text-emerald-400/80 bg-emerald-950/30 p-2 rounded border border-emerald-900/30">
-                        * المعالجة على السيرفر أسرع ومناسبة لدقة 4K، ولكن تتطلب رفع الملف الصوتي.
-                    </p>
+                    <div className="space-y-1">
+                        <p className="text-[10px] text-emerald-400/80 bg-emerald-950/30 p-2 rounded border border-emerald-900/30">
+                            * المعالجة على السيرفر أسرع ومناسبة لدقة 4K، ولكن تتطلب رفع الملف الصوتي.
+                        </p>
+                        {hasLocalAssets && (
+                            <p className="text-[10px] text-red-400 bg-red-950/20 p-2 rounded border border-red-900/30">
+                                تنبيه: قمت برفع خلفيات خاصة بك. حالياً المعالجة على السيرفر لا تدعم الخلفيات المرفوعة، سيتم استخدام شاشة سوداء. يرجى استخدام معالجة الهاتف أو اختيار صور من المكتبة.
+                            </p>
+                        )}
+                    </div>
                 ) : (
                     <p className="text-[10px] text-slate-500">
                         * يتم إنشاء الفيديو مباشرة على جهازك. لا يتم رفع أي ملفات.

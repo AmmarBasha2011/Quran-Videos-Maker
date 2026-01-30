@@ -14,6 +14,11 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3000;
 
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json());
@@ -72,8 +77,10 @@ app.post('/api/generate', upload.single('audio'), async (req, res) => {
 
         // Function to receive the finished video
         let videoData;
-        await page.exposeFunction('onExportComplete', (dataUrl) => {
+        let finalExtension = config.format || 'mp4';
+        await page.exposeFunction('onExportComplete', (dataUrl, extension) => {
             videoData = dataUrl;
+            if (extension) finalExtension = extension;
         });
 
         // Load the app
@@ -99,13 +106,17 @@ app.post('/api/generate', upload.single('audio'), async (req, res) => {
 
         const videoBuffer = Buffer.from(buffer, 'base64');
 
+        // Determine extension/mime-type from config or detected
+        const extension = finalExtension;
+        const mimeType = extension === 'webm' ? 'video/webm' : 'video/mp4';
+
         // Cleanup audio file
         if (audioFile) {
             fs.unlink(audioFile.path, () => {});
         }
 
-        res.setHeader('Content-Type', 'video/mp4');
-        res.setHeader('Content-Disposition', 'attachment; filename=quran-video.mp4');
+        res.setHeader('Content-Type', mimeType);
+        res.setHeader('Content-Disposition', `attachment; filename=quran-video.${extension}`);
         res.send(videoBuffer);
 
     } catch (error) {
