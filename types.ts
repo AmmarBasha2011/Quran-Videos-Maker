@@ -97,9 +97,12 @@ export interface QuranConfig {
 
 export type AppMode = 'upload' | 'reciter';
 
+export type ProcessingMode = 'phone' | 'server';
+
 export interface AppState {
   step: number;
   mode: AppMode; // NEW: Track current mode
+  processingMode: ProcessingMode;
 
   // Video Configuration
   aspectRatio: AspectRatio;

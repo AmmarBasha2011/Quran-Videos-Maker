@@ -1,0 +1,11 @@
+node_modules
+server/node_modules
+server/uploads
+dist
+server/public
+.git
+.env
+.env.local
+server.log
+dev_server.log
+verification

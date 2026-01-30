@@ -2,12 +2,13 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 
 interface AudioProcessingProps {
   file: File | null;
+  audioUrl?: string | null;
   reverbAmount: number; // 0 to 1
   echoAmount: number; // 0 to 1
   normalize: boolean;
 }
 
-export const useAudioProcessing = ({ file, reverbAmount, echoAmount, normalize }: AudioProcessingProps) => {
+export const useAudioProcessing = ({ file, audioUrl, reverbAmount, echoAmount, normalize }: AudioProcessingProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -32,23 +33,34 @@ export const useAudioProcessing = ({ file, reverbAmount, echoAmount, normalize }
     };
   }, []);
 
-  // Load Audio File
+  // Load Audio File or URL
   useEffect(() => {
-    if (!file || !audioContextRef.current) return;
+    if ((!file && !audioUrl) || !audioContextRef.current) return;
 
     const loadAudio = async () => {
-      setIsReady(false);
-      const arrayBuffer = await file.arrayBuffer();
-      const decodedBuffer = await audioContextRef.current!.decodeAudioData(arrayBuffer);
-      audioBufferRef.current = decodedBuffer;
-      setDuration(decodedBuffer.duration);
-      setIsReady(true);
-      setCurrentTime(0);
-      pauseTimeRef.current = 0;
+      try {
+        setIsReady(false);
+        let arrayBuffer: ArrayBuffer;
+        if (file) {
+            arrayBuffer = await file.arrayBuffer();
+        } else {
+            const response = await fetch(audioUrl!);
+            arrayBuffer = await response.arrayBuffer();
+        }
+
+        const decodedBuffer = await audioContextRef.current!.decodeAudioData(arrayBuffer);
+        audioBufferRef.current = decodedBuffer;
+        setDuration(decodedBuffer.duration);
+        setIsReady(true);
+        setCurrentTime(0);
+        pauseTimeRef.current = 0;
+      } catch (e) {
+        console.error("Failed to load audio:", e);
+      }
     };
 
     loadAudio();
-  }, [file]);
+  }, [file, audioUrl]);
 
   // Generate Impulse Response for Reverb
   const getImpulseResponse = useCallback((duration: number, decay: number) => {

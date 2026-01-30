@@ -31,6 +31,7 @@ export default function App() {
   const [state, setState] = useState<AppState>({
     step: 1,
     mode: 'upload', 
+    processingMode: 'phone',
 
     readerName: '',
     surahName: '',
@@ -128,6 +129,7 @@ export default function App() {
     isPlaying, currentTime, duration, isReady, togglePlay, play, pause, audioBuffer 
   } = useAudioProcessing({
     file: state.audioFile,
+    audioUrl: state.audioUrl,
     reverbAmount: state.reverbAmount,
     echoAmount: state.echoAmount,
     normalize: state.isNormalized
@@ -221,6 +223,34 @@ export default function App() {
     }
   }, [state.step]);
 
+  // Headless Auto-Export Logic
+  useEffect(() => {
+    const headlessConfig = (window as any).__HEADLESS_CONFIG__;
+    if (headlessConfig) {
+        console.log("Headless mode detected, initializing...");
+        updateState({ ...headlessConfig, step: 9 });
+
+        // Give it a moment to initialize everything
+        const timer = setTimeout(() => {
+            const startBtn = document.getElementById('start-processing-button') as HTMLButtonElement;
+            if (startBtn && !state.isProcessing) {
+                console.log("Triggering auto-start...");
+                startBtn.click();
+            }
+        }, 2000);
+        return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Expose completion to Puppeteer
+  useEffect(() => {
+      if ((window as any).__HEADLESS_CONFIG__ && generatedVideoUrl) {
+          console.log("Export complete, notifying parent...");
+          (window as any).generatedVideoUrl = generatedVideoUrl;
+          (window as any).onExportComplete?.(generatedVideoUrl);
+      }
+  }, [generatedVideoUrl]);
+
   useEffect(() => {
     if (state.mode === 'upload' && state.step !== 4 && isPlaying) {
         pause();
@@ -283,7 +313,43 @@ export default function App() {
   const handleGenerate = async () => {
     updateState({ isProcessing: true });
     
-    // Pass callback for extension
+    if (state.processingMode === 'server') {
+        try {
+            // Server-side processing logic
+            const formData = new FormData();
+
+            // We need to send the entire state except some fields like history or large buffers
+            const exportState = { ...state, history: [], audioFile: null, audioUrl: null };
+            formData.append('config', JSON.stringify(exportState));
+
+            if (state.audioFile) {
+                formData.append('audio', state.audioFile);
+            }
+
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || 'Server error');
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            setGeneratedVideoUrl(url);
+            setGeneratedExtension(state.format || 'mp4');
+            updateState({ isProcessing: false });
+            addToHistory();
+        } catch (error: any) {
+            alert("خطأ في المعالجة على السيرفر: " + error.message);
+            updateState({ isProcessing: false });
+        }
+        return;
+    }
+
+    // Pass callback for extension (Phone/Client-side)
     generateVideo(state, audioBuffer, false, (url1, ext) => {
         setGeneratedVideoUrl(url1);
         setGeneratedExtension(ext);
@@ -332,7 +398,7 @@ export default function App() {
           if (state.step === 6) return <GlobalStyleStep state={state} updateState={updateState} />;
           if (state.step === 7) return <StyleStep state={state} updateState={updateState} />;
           if (state.step === 8) return <QualityStep resolution={state.resolution} fps={state.fps} format={state.format} updateState={updateState} />;
-          if (state.step === 9) return <ExportStep state={state} isExporting={isExporting} exportProgress={exportProgress} generatedVideoUrl={generatedVideoUrl} generatedNoTextUrl={generatedNoTextUrl} generatedExtension={generatedExtension} onGenerate={handleGenerate} onReset={() => {
+          if (state.step === 9) return <ExportStep state={state} isExporting={isExporting} exportProgress={exportProgress} generatedVideoUrl={generatedVideoUrl} generatedNoTextUrl={generatedNoTextUrl} generatedExtension={generatedExtension} onGenerate={handleGenerate} updateState={updateState} onReset={() => {
               updateState({ step: 1, selectedAssets: [] });
               setImages([]);
               setVideos([]);
@@ -345,7 +411,7 @@ export default function App() {
           if (state.step === 6) return <GlobalStyleStep state={state} updateState={updateState} />;
           if (state.step === 7) return <StyleStep state={state} updateState={updateState} />;
           if (state.step === 8) return <QualityStep resolution={state.resolution} fps={state.fps} format={state.format} updateState={updateState} />;
-          if (state.step === 9) return <ExportStep state={state} isExporting={isExporting} exportProgress={exportProgress} generatedVideoUrl={generatedVideoUrl} generatedNoTextUrl={generatedNoTextUrl} generatedExtension={generatedExtension} onGenerate={handleGenerate} onReset={() => {
+          if (state.step === 9) return <ExportStep state={state} isExporting={isExporting} exportProgress={exportProgress} generatedVideoUrl={generatedVideoUrl} generatedNoTextUrl={generatedNoTextUrl} generatedExtension={generatedExtension} onGenerate={handleGenerate} updateState={updateState} onReset={() => {
               updateState({ step: 1, selectedAssets: [] });
               setImages([]);
               setVideos([]);

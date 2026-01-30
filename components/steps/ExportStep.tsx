@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Settings, Loader2, CheckCircle, Download, Hand, Timer, FileVideo } from 'lucide-react';
+import { Settings, Loader2, CheckCircle, Download, Hand, Timer, FileVideo, Smartphone, Server } from 'lucide-react';
 import { AppState } from '../../types';
 
 interface Props {
@@ -12,11 +12,12 @@ interface Props {
   generatedExtension: string; // New prop for actual extension
   onGenerate: () => void;
   onReset: () => void;
+  updateState: (updates: Partial<AppState>) => void;
 }
 
 const DHIKR_LIST = ['سُبْحَانَ اللَّهِ', 'الْحَمْدُ لِلَّهِ', 'لَا إِلَهَ إِلَّا اللَّهُ', 'اللَّهُ أَكْبَرُ'];
 
-export const ExportStep: React.FC<Props> = ({ state, isExporting, exportProgress, generatedVideoUrl, generatedNoTextUrl, generatedExtension, onGenerate, onReset }) => {
+export const ExportStep: React.FC<Props> = ({ state, isExporting, exportProgress, generatedVideoUrl, generatedNoTextUrl, generatedExtension, onGenerate, onReset, updateState }) => {
   const [count, setCount] = useState(0);
   const [dhikrIndex, setDhikrIndex] = useState(0);
   const [animateClick, setAnimateClick] = useState(false);
@@ -67,11 +68,42 @@ export const ExportStep: React.FC<Props> = ({ state, isExporting, exportProgress
                     سيتم إنشاء نسختين: واحدة بالآيات وأخرى بدونها.
                 </div>
             )}
+
+            <div className="flex flex-col gap-3 max-w-sm mx-auto my-6">
+                <p className="text-xs text-slate-500 font-bold mb-1 uppercase tracking-wider text-right">مكان المعالجة:</p>
+                <div className="grid grid-cols-2 gap-2 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+                    <button
+                        onClick={() => updateState({ processingMode: 'phone' })}
+                        className={`flex items-center justify-center gap-2 py-2 px-4 rounded-lg transition-all ${state.processingMode === 'phone' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                    >
+                        <Smartphone size={16} />
+                        <span className="text-sm font-bold">الهاتف</span>
+                    </button>
+                    <button
+                        onClick={() => updateState({ processingMode: 'server' })}
+                        className={`flex items-center justify-center gap-2 py-2 px-4 rounded-lg transition-all ${state.processingMode === 'server' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                    >
+                        <Server size={16} />
+                        <span className="text-sm font-bold">السيرفر</span>
+                    </button>
+                </div>
+                {state.processingMode === 'server' ? (
+                    <p className="text-[10px] text-emerald-400/80 bg-emerald-950/30 p-2 rounded border border-emerald-900/30">
+                        * المعالجة على السيرفر أسرع ومناسبة لدقة 4K، ولكن تتطلب رفع الملف الصوتي.
+                    </p>
+                ) : (
+                    <p className="text-[10px] text-slate-500">
+                        * يتم إنشاء الفيديو مباشرة على جهازك. لا يتم رفع أي ملفات.
+                    </p>
+                )}
+            </div>
+
             <p className="text-slate-400 max-w-sm mx-auto text-sm">
               سيتم إنشاء الفيديو بأقصى جودة ممكنة. قد تستغرق العملية بعض الوقت خاصة مع دقة 4K.
             </p>
           </div>
           <button 
+            id="start-processing-button"
             onClick={onGenerate}
             className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-emerald-900/40 transition-all hover:scale-105 active:scale-95 flex items-center mx-auto"
           >
